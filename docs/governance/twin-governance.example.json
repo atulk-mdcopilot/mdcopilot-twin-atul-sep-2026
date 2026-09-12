@@ -1,0 +1,184 @@
+{
+  "schema_version": "twin-governance-example/0.1",
+  "document_status": "approved",
+  "document_revision": "0.2",
+  "approval": {
+    "recorded_at": "2026-09-10T23:33:19Z",
+    "source": "explicit_user_instruction",
+    "approved_by": "project_user",
+    "scope": "demo_governance_documents"
+  },
+  "sample_only": false,
+  "operator": {
+    "legal_name": null,
+    "project_contact": null,
+    "privacy_contact": null,
+    "planned_pilot_close_date": null
+  },
+  "scope": {
+    "milestone": "twin-lab-v0.1",
+    "collection_purpose": "demo",
+    "synthetic_cases_only": true,
+    "fabricated_qa_responses_allowed": true,
+    "actual_physician_response_capture_enabled": false,
+    "default_case_review_status": "unreviewed",
+    "default_eligible_for_study": false,
+    "patient_data_allowed": false,
+    "model_advice_allowed": false,
+    "training_allowed": false,
+    "research_reuse_allowed": false,
+    "external_ai_calls_allowed": false,
+    "analytics_transmission_allowed": false,
+    "cloud_backup_allowed": false,
+    "public_response_release_allowed": false,
+    "clinical_deployment_allowed": false,
+    "named_twin_representation_allowed": false
+  },
+  "permission": {
+    "document_version": "DEMO-PERM-v0.1",
+    "status": "approved",
+    "approved_by": "project_user",
+    "approved_at": "2026-09-10T23:33:19Z",
+    "participant_ready": false,
+    "participant_choice_preselected": false,
+    "retain_receipt_with_exact_document_version": true,
+    "participant_copy_required": true
+  },
+  "retention": {
+    "policy_version": "demo-retention-v0.1",
+    "status": "approved",
+    "periods_are_approved_policy_choices_not_legal_minima": true,
+    "RET-DEMO": {
+      "anchor": "original_submission_at",
+      "max_days_from_anchor": 90,
+      "max_days_after_pilot_close": 30,
+      "use_earliest_expiry": true,
+      "correction_resets_clock": false
+    },
+    "RET-EXP": {
+      "max_days_from_creation": 30,
+      "also_expire_at_earliest_source_record_expiry": true
+    },
+    "RET-LOG": {
+      "max_days_from_event": 14,
+      "response_text_allowed": false
+    },
+    "RET-BAK": {
+      "max_snapshot_age_days": 30,
+      "max_additional_days_after_active_deletion": 30,
+      "reapply_deletions_before_restore_use": true,
+      "cloud_allowed": false
+    },
+    "RET-XREF": {
+      "create_by_default": false,
+      "max_days_after_last_linked_response_removed": 30
+    },
+    "RET-PERM": {
+      "years_after_pilot_close": 1,
+      "year_basis": "calendar_year_after_pilot_close",
+      "application_day_count_requires_pilot_close_date": true,
+      "response_text_allowed": false
+    },
+    "RET-AUD": {
+      "years_after_pilot_close": 1,
+      "year_basis": "calendar_year_after_pilot_close",
+      "application_day_count_requires_pilot_close_date": true,
+      "response_text_allowed": false
+    },
+    "RET-RES": {
+      "enabled": false,
+      "proposed_years_after_study_completion": 3,
+      "requires_separate_approved_policy": true
+    },
+    "RET-MOD": {
+      "enabled": false,
+      "requires_separate_approved_policy": true
+    },
+    "legal_hold": {
+      "requires_authority_record": true,
+      "requires_scoped_record_ids": true,
+      "no_ordinary_use_during_hold": true
+    }
+  },
+  "withdrawal": {
+    "stop_further_capture_and_use_on_receipt": true,
+    "reasonable_verification_required": true,
+    "max_days_to_active_deletion_after_verification": 30,
+    "earlier_retention_deadline_still_applies": true,
+    "handle_linked_corrections_and_exports": true,
+    "keep_minimal_receipt_without_content": true
+  },
+  "owner_registry": [
+    {
+      "code": "OWN-PROJ",
+      "role": "project_sponsor",
+      "proposed_assignee": "Atul / project lead — proposed",
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-CLIN",
+      "role": "clinical_lead",
+      "proposed_assignee": "Atul / clinical lead — proposed",
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-ENG",
+      "role": "engineering_lead",
+      "proposed_assignee": null,
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-DATA",
+      "role": "data_steward",
+      "proposed_assignee": null,
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-PRIV",
+      "role": "privacy_governance_reviewer",
+      "proposed_assignee": null,
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-QA",
+      "role": "test_reviewer",
+      "proposed_assignee": null,
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    },
+    {
+      "code": "OWN-METH",
+      "role": "future_methods_lead",
+      "proposed_assignee": null,
+      "accepted_assignee": null,
+      "accepted_at": null,
+      "status": "unassigned_or_unaccepted"
+    }
+  ],
+  "required_before_actual_physician_capture": [
+    "operator.legal_name",
+    "operator.project_contact",
+    "operator.privacy_contact",
+    "operator.planned_pilot_close_date",
+    "accepted_owners_for_demo",
+    "documented_review_determination_as_applicable",
+    "approved_permission_and_retention",
+    "completed_operational_governance_record",
+    "participant_ready_notice",
+    "tested_storage_export_deletion_and_no_network_controls"
+  ],
+  "example_participant_code": "PHY-7Q4M9C2K",
+  "example_code_is_not_an_actual_assignment": true,
+  "configuration_alone_does_not_implement_controls": true
+}

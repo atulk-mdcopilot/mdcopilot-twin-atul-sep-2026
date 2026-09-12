@@ -1,0 +1,19 @@
+name: twin-lab
+services:
+  twin-lab:
+    image: python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
+    working_dir: /app
+    command: ["python", "-m", "twin_lab.server", "--container-bind", "--data-dir", "/data"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - .:/app:ro
+      - ${HOME}/.local/share/twin-lab:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

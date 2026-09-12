@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twin Lab · Synthetic decision capture</title>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/planning.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><div><strong>Twin Lab</strong><span class="version">v0.1 · local workbench</span></div></div>
+    <nav aria-label="Main navigation">
+      <button type="button" id="capture-tab" class="nav-button active" aria-current="page">Capture</button>
+      <button type="button" id="review-tab" class="nav-button">Review responses</button>
+      <button type="button" id="cases-tab" class="nav-button">Case lab</button>
+      <button type="button" id="collection-tab" class="nav-button">Collection plan</button>
+      <button type="button" id="governance-tab" class="nav-button">Governance</button>
+    </nav>
+    <div class="header-actions">
+      <span class="local-label"><span aria-hidden="true">●</span> Local only</span>
+      <button type="button" id="theme-toggle" class="secondary-button theme-toggle" aria-pressed="false">Dark mode</button>
+    </div>
+  </header>
+  <p id="theme-status" class="theme-status" role="status" hidden></p>
+  <aside class="prototype-notice" aria-label="Prototype limitations">
+    <strong>Synthetic-case prototype</strong>
+    <span>Synthetic demo cases; source fixtures are unreviewed. Local reviews apply to exact versions. Study collection is disabled. Not a validated clinical tool; do not enter patient information.</span>
+  </aside>
+  <main id="main">
+    <section id="capture-view" aria-labelledby="capture-heading">
+      <div class="page-heading"><div><p class="eyebrow">GI BLEEDING · DECISION CAPTURE</p><h1 id="capture-heading">Record your next step.</h1><p class="lede">Read a synthetic case, then capture your unaided decision. It is fine to record insufficient information.</p></div><span class="step-label">01 / CAPTURE</span></div>
+      <section id="capture-mode" class="panel planning-card capture-mode" aria-label="Participation and capture mode"></section>
+      <div class="workspace">
+        <aside class="case-sidebar" aria-labelledby="cases-heading">
+          <div class="section-top"><h2 id="cases-heading">Demo cases</h2><span id="case-count" class="count">—</span></div>
+          <p class="small muted">Newly authored software placeholders.</p>
+          <div id="case-list" class="case-list"></div>
+          <p id="cases-status" role="status" class="small">Loading cases…</p>
+          <button type="button" id="reload-cases" class="text-button" hidden>Retry loading cases</button>
+          <div class="sidebar-note"><strong>Observation comes first</strong><p>No advice, answer key, or model output is shown in this workbench.</p></div>
+        </aside>
+        <div class="capture-column">
+          <section class="panel case-panel" aria-label="Presented synthetic case">
+            <p id="presentation-status" role="status">Select a case to begin.</p>
+            <button type="button" id="retry-presentation" class="secondary-button" hidden>Open the requested presentation</button>
+            <div id="case-display"></div>
+          </section>
+          <section class="panel response-panel" aria-labelledby="response-heading">
+            <div class="section-top"><h2 id="response-heading">Your response</h2><span class="subtle-tag">Unaided</span></div>
+            <p id="correction-notice" class="correction-notice" hidden></p>
+            <p id="assignment-notice" class="correction-notice" hidden></p>
+            <p class="small muted">Required fields are marked *. Use a code, without a name or email. Brief responses are enough.</p>
+            <form id="response-form">
+              <fieldset id="response-fields" disabled>
+                <legend class="sr-only">Physician response</legend>
+                <div class="code-field"><label for="physician-code">Physician code <span aria-hidden="true">*</span></label><input id="physician-code" name="physician_code" required autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="code-help"><p id="code-help" class="field-help">A consistent pseudonymous code, for example DEMO-01. This is not an account.</p></div>
+                <label for="next-action">What would you do next? <span aria-hidden="true">*</span></label>
+                <textarea id="next-action" name="next_action" rows="3" required placeholder="Record your next action, or that you have insufficient information."></textarea>
+                <label for="next-information">What information would you request next? <span aria-hidden="true">*</span></label>
+                <textarea id="next-information" name="next_information" rows="3" required placeholder="Record the information you would seek."></textarea>
+                <label for="decision-change">What would change your decision? <span aria-hidden="true">*</span></label>
+                <textarea id="decision-change" name="decision_change" rows="3" required placeholder="Record a finding, condition, or uncertainty that could change your next step."></textarea>
+                <div class="optional-fields">
+                  <div><label for="rationale">Brief rationale <span class="optional">optional</span></label><textarea id="rationale" name="rationale" rows="3" placeholder="A short explanation, if helpful."></textarea></div>
+                  <div><label for="confidence">Decision confidence <span class="optional">optional</span></label><select id="confidence" name="confidence" aria-describedby="confidence-help"><option value="">Not recorded</option><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option></select><p id="confidence-help" class="field-help">Self-reported confidence in this decision, not disease probability.</p></div>
+                </div>
+              </fieldset>
+              <div class="form-footer"><p class="small muted">Saved on this machine.<br>Corrections preserve the original response.</p><button id="save-response" type="submit" class="primary-button" disabled>Save response <span aria-hidden="true">→</span></button></div>
+            </form>
+            <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
+            <button type="button" id="new-response" class="secondary-button" hidden>Start another response to this case</button>
+          </section>
+        </div>
+      </div>
+    </section>
+    <section id="review-view" aria-labelledby="review-heading" hidden>
+      <div class="page-heading"><div><p class="eyebrow">LOCAL RECORDS · RESPONSE HISTORY</p><h1 id="review-heading">Review your observations.</h1><p class="lede">Originals and corrections are preserved while retained. Restricted records are withheld from ordinary review. All permitted physician codes on this machine are visible here.</p></div><span class="step-label">02 / REVIEW</span></div>
+      <div class="review-toolbar"><div><strong id="response-count">Responses</strong><p class="small muted">Export includes permitted responses and their supporting records. Downloads are copies outside application control; keep an inventory and keep them out of Git.</p></div><div class="toolbar-actions"><button type="button" id="refresh-responses" class="secondary-button">Refresh</button><a href="/api/export" id="export-responses" class="primary-button" download="twin-lab-export.json">Export JSON <span aria-hidden="true">↓</span></a></div></div>
+      <p id="review-status" role="status" aria-live="polite"></p>
+      <div id="response-list" class="response-list"></div>
+    </section>
+    <section id="cases-view" aria-label="Case lab" hidden></section>
+    <section id="collection-view" aria-label="Collection plan" hidden></section>
+    <section id="governance-view" aria-label="Governance and response lifecycle" hidden></section>
+  </main>
+  <footer class="site-footer"><span>Twin Lab · Synthetic decision capture</span><span>Demo collection · No clinical validation · No AI advice</span></footer>
+</body>
+</html>

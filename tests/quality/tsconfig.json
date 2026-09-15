@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": false,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "paths": {"/*": ["../../twin_lab/static/*"]}
+  },
+  "files": [
+    "../../twin_lab/static/api.js",
+    "../../twin_lab/static/capture-mode.js",
+    "../../twin_lab/static/collection.js",
+    "../../twin_lab/static/governance.js",
+    "../../twin_lab/static/governance-form.js",
+    "../../twin_lab/static/planning-ui.js",
+    "../../twin_lab/static/snapshot.js",
+    "../../twin_lab/static/theme.js"
+  ]
+}

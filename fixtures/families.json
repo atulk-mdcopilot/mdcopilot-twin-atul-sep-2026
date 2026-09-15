@@ -1,0 +1,67 @@
+[
+  {
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc101",
+    "title": "Dark stool — available hemoglobin",
+    "base_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28501",
+    "base_version": "1.0",
+    "variant_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28601",
+    "variant_title": "Synthetic case 6 — dark stool",
+    "factor_label": "Current hemoglobin value",
+    "fact_label": "Available laboratory result",
+    "base_value": "Hemoglobin 9.4 g/dL; prior value is not available",
+    "variant_value": "Hemoglobin 7.4 g/dL; prior value is not available",
+    "held_constant": ["Narrative", "Care setting", "Age", "Current observations", "Reported history", "Information available now", "Prior hemoglobin availability"]
+  },
+  {
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc102",
+    "title": "Maroon stool — last medication administration information",
+    "base_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28502",
+    "base_version": "1.0",
+    "variant_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28602",
+    "variant_title": "Synthetic case 7 — maroon stool",
+    "factor_label": "Availability of last apixaban administration time",
+    "fact_label": "Reported medication",
+    "base_value": "Apixaban is on the supplied medication list; dose and last administration time have not been supplied",
+    "variant_value": "Apixaban is on the supplied medication list; dose has not been supplied; last administration was reported as two hours earlier",
+    "held_constant": ["Narrative", "Care setting", "Age", "Current observations", "Available laboratory result", "Information available now", "Listed medication", "Medication dose availability"]
+  },
+  {
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc103",
+    "title": "Blood in vomit — heart rate",
+    "base_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28503",
+    "base_version": "1.0",
+    "variant_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28603",
+    "variant_title": "Synthetic case 8 — blood in vomit",
+    "factor_label": "Current heart rate",
+    "fact_label": "Current observations",
+    "base_value": "Blood pressure 116/70 mmHg; heart rate 84/min; oxygen saturation 99% on room air",
+    "variant_value": "Blood pressure 116/70 mmHg; heart rate 104/min; oxygen saturation 99% on room air",
+    "held_constant": ["Narrative", "Care setting", "Age", "Available laboratory result", "Reported history", "Information available now", "Blood pressure", "Oxygen saturation"]
+  },
+  {
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc104",
+    "title": "Red blood with stool — temperature",
+    "base_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28504",
+    "base_version": "1.0",
+    "variant_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28604",
+    "variant_title": "Synthetic case 9 — red blood with stool",
+    "factor_label": "Current temperature",
+    "fact_label": "Current observations",
+    "base_value": "Blood pressure 122/78 mmHg; heart rate 90/min; temperature 37.4 degrees C",
+    "variant_value": "Blood pressure 122/78 mmHg; heart rate 90/min; temperature 38.4 degrees C",
+    "held_constant": ["Narrative", "Care setting", "Age", "Available laboratory result", "Reported history", "Information available now", "Blood pressure", "Heart rate"]
+  },
+  {
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc105",
+    "title": "Recurrent dark stool — prior hemoglobin",
+    "base_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28505",
+    "base_version": "1.0",
+    "variant_case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28605",
+    "variant_title": "Synthetic case 10 — recurrent dark stool",
+    "factor_label": "Hemoglobin value reported three months earlier",
+    "fact_label": "Available laboratory result",
+    "base_value": "Hemoglobin 8.8 g/dL; a fictional result from three months earlier was 11.1 g/dL",
+    "variant_value": "Hemoglobin 8.8 g/dL; a fictional result from three months earlier was 8.9 g/dL",
+    "held_constant": ["Narrative", "Care setting", "Age", "Current observations", "Reported medication", "Information available now", "Current hemoglobin", "Prior laboratory result timing"]
+  }
+]

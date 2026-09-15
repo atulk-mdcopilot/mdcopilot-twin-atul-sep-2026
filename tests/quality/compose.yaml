@@ -1,0 +1,53 @@
+# Deliberately standalone: never combine with the application compose.yaml.
+x-restricted: &restricted
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp:rw,nosuid,nodev,size=512m"]
+  volumes:
+    - ../..:/app:ro
+    - ${TWIN_QUALITY_OUTPUT:?Run tests/quality/run.sh}:/quality-output
+  working_dir: /app
+services:
+  python-checks:
+    <<: *restricted
+    image: twin-lab-quality-python:1
+    pull_policy: never
+    network_mode: none
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+  js-checks:
+    <<: *restricted
+    image: twin-lab-quality-browser:1
+    pull_policy: never
+    network_mode: none
+    environment:
+      NODE_PATH: /opt/twin-quality/node_modules
+  test-server:
+    <<: *restricted
+    image: python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
+    pull_policy: never
+    network_mode: none
+    # This volume replaces the shared declaration: the server cannot read artifacts.
+    volumes: ["../..:/app:ro"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    command: ["python", "-m", "twin_lab.server", "--data-dir", "/tmp/twin-lab-fabricated"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/cases', timeout=2).close()"]
+      interval: 1s
+      timeout: 3s
+      retries: 40
+  browser-checks:
+    <<: *restricted
+    image: twin-lab-quality-browser:1
+    pull_policy: never
+    network_mode: service:test-server
+    init: true
+    shm_size: 1gb
+    environment:
+      NODE_PATH: /opt/twin-quality/node_modules
+      TWIN_QUALITY_OUTPUT: /quality-output
+      PLAYWRIGHT_JSON_OUTPUT_FILE: /quality-output/browser-results.json

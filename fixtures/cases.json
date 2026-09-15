@@ -1,0 +1,102 @@
+[
+  {
+    "case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28501",
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc101",
+    "version": "1.0",
+    "title": "Synthetic case 1 — dark stool",
+    "provenance": "Newly authored synthetic UI/demo placeholder for Twin Lab v0.1; not from patient records or an original case workbook. Unreviewed; not eligible for study.",
+    "care_setting": "Synthetic emergency-department observation after initial stabilization",
+    "narrative": "This fictional 62-year-old adult reported two episodes of black stool and lightheadedness earlier today. Initial stabilization has been completed for this scenario. The person is now awake and speaking comfortably. No bleeding source or diagnosis has been established in the information presented.",
+    "decision_time_facts": [
+      {"label": "Age", "value": "62 years; fictional adult"},
+      {"label": "Current observations", "value": "Blood pressure 118/72 mmHg; heart rate 88/min; oxygen saturation 98% on room air"},
+      {"label": "Available laboratory result", "value": "Hemoglobin 9.4 g/dL; prior value is not available"},
+      {"label": "Reported history", "value": "Intermittent ibuprofen use during the preceding week; no other medication history supplied"},
+      {"label": "Information available now", "value": "No endoscopy report, subsequent laboratory trend, or later clinical course is supplied"}
+    ],
+    "synthetic": true,
+    "review_status": "unreviewed",
+    "eligible_for_study": false,
+    "collection_purpose": "demo"
+  },
+  {
+    "case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28502",
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc102",
+    "version": "1.0",
+    "title": "Synthetic case 2 — maroon stool",
+    "provenance": "Newly authored synthetic UI/demo placeholder for Twin Lab v0.1; not from patient records or an original case workbook. Unreviewed; not eligible for study.",
+    "care_setting": "Synthetic emergency-department observation after initial stabilization",
+    "narrative": "This fictional 71-year-old adult reported several maroon stools over six hours without abdominal pain. Initial stabilization has been completed for this scenario. The person currently reports no dizziness at rest. No bleeding source or diagnosis has been established in the information presented.",
+    "decision_time_facts": [
+      {"label": "Age", "value": "71 years; fictional adult"},
+      {"label": "Current observations", "value": "Blood pressure 124/76 mmHg; heart rate 92/min; oxygen saturation 97% on room air"},
+      {"label": "Available laboratory result", "value": "Hemoglobin 10.2 g/dL; prior value is not available"},
+      {"label": "Reported medication", "value": "Apixaban is on the supplied medication list; dose and last administration time have not been supplied"},
+      {"label": "Information available now", "value": "No imaging report, endoscopy report, or subsequent stool observations are supplied"}
+    ],
+    "synthetic": true,
+    "review_status": "unreviewed",
+    "eligible_for_study": false,
+    "collection_purpose": "demo"
+  },
+  {
+    "case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28503",
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc103",
+    "version": "1.0",
+    "title": "Synthetic case 3 — blood in vomit",
+    "provenance": "Newly authored synthetic UI/demo placeholder for Twin Lab v0.1; not from patient records or an original case workbook. Unreviewed; not eligible for study.",
+    "care_setting": "Synthetic hospital observation after initial stabilization",
+    "narrative": "This fictional 45-year-old adult reported repeated vomiting followed by one episode containing red material described as blood. Initial stabilization has been completed for this scenario. The person is now alert and reports mild upper abdominal discomfort. No bleeding source or diagnosis has been established in the information presented.",
+    "decision_time_facts": [
+      {"label": "Age", "value": "45 years; fictional adult"},
+      {"label": "Current observations", "value": "Blood pressure 116/70 mmHg; heart rate 84/min; oxygen saturation 99% on room air"},
+      {"label": "Available laboratory result", "value": "Hemoglobin 11.6 g/dL; prior value is not available"},
+      {"label": "Reported history", "value": "No medication list or prior procedure records have been supplied"},
+      {"label": "Information available now", "value": "The amount of blood was not measured; no endoscopy report or later clinical course is supplied"}
+    ],
+    "synthetic": true,
+    "review_status": "unreviewed",
+    "eligible_for_study": false,
+    "collection_purpose": "demo"
+  },
+  {
+    "case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28504",
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc104",
+    "version": "1.0",
+    "title": "Synthetic case 4 — red blood with stool",
+    "provenance": "Newly authored synthetic UI/demo placeholder for Twin Lab v0.1; not from patient records or an original case workbook. Unreviewed; not eligible for study.",
+    "care_setting": "Synthetic emergency-department observation after initial stabilization",
+    "narrative": "This fictional 36-year-old adult reported red blood mixed with loose stool during the last day and intermittent lower abdominal cramps. Initial stabilization has been completed for this scenario. The person is awake and able to describe the symptoms. No bleeding source or diagnosis has been established in the information presented.",
+    "decision_time_facts": [
+      {"label": "Age", "value": "36 years; fictional adult"},
+      {"label": "Current observations", "value": "Blood pressure 122/78 mmHg; heart rate 90/min; temperature 37.4 degrees C"},
+      {"label": "Available laboratory result", "value": "Hemoglobin 12.0 g/dL; prior value is not available"},
+      {"label": "Reported history", "value": "Four loose stools were reported; travel, exposure, and medication histories have not been supplied"},
+      {"label": "Information available now", "value": "No stool test, imaging report, endoscopy report, or later clinical course is supplied"}
+    ],
+    "synthetic": true,
+    "review_status": "unreviewed",
+    "eligible_for_study": false,
+    "collection_purpose": "demo"
+  },
+  {
+    "case_id": "bb2c61c6-e1dd-4b61-9e12-b40d5db28505",
+    "family_id": "8688f7eb-76ab-4b70-8522-70a9ef5bc105",
+    "version": "1.0",
+    "title": "Synthetic case 5 — recurrent dark stool",
+    "provenance": "Newly authored synthetic UI/demo placeholder for Twin Lab v0.1; not from patient records or an original case workbook. Unreviewed; not eligible for study.",
+    "care_setting": "Synthetic hospital observation after initial stabilization",
+    "narrative": "This fictional 79-year-old adult reported dark stools on two separate days and increased fatigue. Initial stabilization has been completed for this scenario. The person currently reports no chest discomfort or shortness of breath at rest. No bleeding source or diagnosis has been established in the information presented.",
+    "decision_time_facts": [
+      {"label": "Age", "value": "79 years; fictional adult"},
+      {"label": "Current observations", "value": "Blood pressure 128/74 mmHg; heart rate 82/min; oxygen saturation 97% on room air"},
+      {"label": "Available laboratory result", "value": "Hemoglobin 8.8 g/dL; a fictional result from three months earlier was 11.1 g/dL"},
+      {"label": "Reported medication", "value": "An oral iron supplement appears on the supplied list; the remainder of the medication history is not available"},
+      {"label": "Information available now", "value": "No stool appearance has been directly observed in this scenario; no procedure report or later clinical course is supplied"}
+    ],
+    "synthetic": true,
+    "review_status": "unreviewed",
+    "eligible_for_study": false,
+    "collection_purpose": "demo"
+  }
+]

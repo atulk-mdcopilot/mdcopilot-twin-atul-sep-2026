@@ -1,8 +1,8 @@
 .planning-stack { display: grid; gap: 24px; }
 .planning-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 24px; }
 .planning-card { overflow-wrap: anywhere; }
-.planning-card h2 { font-family: Georgia, serif; font-weight: 400; font-size: 1.45rem; }
-.planning-card h3 { font-size: .85rem; margin-top: 20px; }
+.planning-card h2 { font-size: var(--type-h2); font-weight: var(--type-weight-heading); }
+.planning-card h3 { font-size: var(--type-label); margin-top: 20px; }
 .planning-field { margin-bottom: 20px; }
 .planning-field textarea { margin-bottom: 0; }
 .planning-field textarea[name="snapshot"] { min-height: 280px; font-family: ui-monospace, monospace; font-size: .78rem; }

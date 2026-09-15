@@ -22,6 +22,19 @@ outside the checkout. Runtime configuration follows the official
 [Compose services reference](https://docs.docker.com/reference/compose-file/services/).
 See the README for exact commands and storage paths.
 
+## Local visual-token alignment
+
+Twin Lab uses a small local CSS mapping aligned with the MDcopilot semantic
+design vocabulary: surfaces, text, borders, accent, status colors, radii,
+shadows, typography, and minimum control sizes. The mapping is defined in
+`twin_lab/static/styles.css` so existing Twin Lab selectors continue to work
+without importing MDcopilot React components, Tailwind, remote fonts, assets,
+preference synchronization, or product modules. Twin Lab retains its local
+light/dark preference behavior and does not add a third theme.
+
+This is a visual consistency choice only. It does not create a shared runtime,
+change capture or governance behavior, or expand the local-only scope.
+
 ## Persistence and migration ownership
 
 `persistence.py` owns the shared SQLite connection, record lookup, ordered reads

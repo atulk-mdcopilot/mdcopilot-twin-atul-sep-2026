@@ -12,6 +12,8 @@ cp "$root/.gitignore" "$scratch/.gitignore"
 mkdir -p "$scratch/fixtures" "$scratch/data" "$scratch/runtime" \
   "$scratch/exports" "$scratch/backups" "$scratch/logs" "$scratch/nested" \
   "$scratch/governance-private" "$scratch/permission-receipts" "$scratch/lifecycle-ledger"
+mkdir -p "$scratch/quality-output" "$scratch/test-results" "$scratch/playwright-report" \
+  "$scratch/node_modules" "$scratch/.mypy_cache" "$scratch/.ruff_cache"
 cp "$root/fixtures/cases.json" "$scratch/fixtures/cases.json"
 
 checked=0
@@ -30,7 +32,9 @@ for path in \
   lifecycle-ledger/ledger.txt twin-lab-permission-test.json \
   twin-lab-governance-test.json twin-lab-disposal-plan.json \
   deletion-ledger.json lifecycle-events.jsonl before-governance-verification.json \
-  twin-lab-export-00000000-0000-0000-0000-000000000000.json
+  twin-lab-export-00000000-0000-0000-0000-000000000000.json \
+  quality-output/results.json test-results/trace.zip playwright-report/index.html \
+  node_modules/package.js .mypy_cache/cache.json .ruff_cache/cache.json checker.tsbuildinfo
 do
   printf '%s\n' 'Synthetic sentinel only; no response data or credentials.' > "$scratch/$path"
   checked=$((checked + 1))

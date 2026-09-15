@@ -1,7 +1,16 @@
 # Twin Lab quality implementation plan
 
-Prepared September 12, 2026. Status: **proposed implementation; planning only**.
+Prepared September 12, 2026. Status: **implemented; final evidence in
+[verification](verification.md)**. The original Downloads attachment is unchanged.
 Repository: `Twin-Atul-Sept-2026`. Working branch: `feat/twin-lab-v0-1`.
+
+Implementation preserves the acceptance requirements below. The authorized
+source checkpoint is `55ef561`; quality changes remain local. The single gate
+is `sh tests/quality/run.sh --fast|--full`. The four approved development tools
+are pinned under `tests/quality/`; they add no application dependency. Only
+`persistence.py` and `migrations.py` were added as shared runtime modules.
+The actual application process, response storage and operating records were
+not upgraded or edited. The optional performance measurement remains deferred.
 
 ## Outcome and scope
 
@@ -12,8 +21,8 @@ each phase has tests and an independent review before the next phase begins.
 
 This plan covers the five engineering recommendations and seven quality rules
 from the discussion. It also records the lower-priority lifecycle performance
-suggestion. It does not implement them, approve clinical cases, complete operating
-attestations, or change any participant or response record.
+suggestion. Implementation does not approve clinical cases, complete operating
+attestations, or change any actual participant or response record.
 
 Keep the application single-user, local and synthetic-only. No AI runtime,
 training, patient data, cloud services, shared deployment, EHR integration, push,
@@ -42,7 +51,8 @@ runtime storage; they must not be copied into this plan or test fixtures.
 Source contracts: [first build](../MDcopilot_Twin_First_Build.md),
 [milestone 2](milestone-2.md), [milestone 3](milestone-3.md),
 [schema](schema.md), [verification](verification.md), and [AGENTS.md](../AGENTS.md).
-This plan supplements those contracts; planned changes are not current behavior.
+This plan supplements those contracts; current versions and behavior are recorded
+in schema/milestone documentation and actual test evidence in verification.
 
 ## Decisions and implementation order
 
@@ -98,7 +108,7 @@ Each phase: acceptance examples -> tests -> implementation -> review -> evidence
   Screenshots, downloads, logs and traces stay outside Git in a dedicated test
   output directory, separate from actual Twin Lab data.
 
-**Proposed test-only tooling, subject to dependency approval**
+**Test-only tooling, explicitly approved for implementation**
 
 - Python: Ruff for lint/format checks; mypy for gradual type checking, starting
   with schema, persistence and lifecycle boundaries. Use existing schema modules
@@ -126,7 +136,8 @@ See [Ruff](https://docs.astral.sh/ruff/),
 [mypy adoption](https://mypy.readthedocs.io/en/stable/existing_code.html),
 [checkJs](https://www.typescriptlang.org/tsconfig/checkJs.html), and
 [Playwright Docker](https://playwright.dev/docs/docker).
-Exact version numbers remain a setup task, not invented lock values in this plan.
+Verified exact versions, transitive locks and image digests are recorded under
+`tests/quality/`; see the execution record for the versions actually tested.
 
 **Test isolation**
 
@@ -394,8 +405,8 @@ defects, each in its own tested change.
    private artifacts remain excluded; review findings are resolved or explicitly
    deferred; and the final report records actual evidence and remaining limits.
 
-Use these rules in the existing `AGENTS.md` and verification documentation when
-implementation begins. Do not create overlapping instruction/checklist files.
+These rules are incorporated in the existing `AGENTS.md` and verification
+documentation. Do not create overlapping instruction/checklist files.
 No arbitrary coverage percentage or test-count target substitutes for behavior.
 
 ## Coverage map and traceability
@@ -441,7 +452,7 @@ do not run an older incompatible binary against the newer database; use a forwar
 fix or a separately restored, journal-reconciled copy with the documented barrier.
 Never replace live data or erase newer observations automatically.
 
-## Plan review and execution prerequisites
+## Plan review and execution record
 
 Architecture, code quality, test coverage and performance were evaluated using
 the engineering-plan checklist and separate backend/frontend reviewers. Their
@@ -449,18 +460,15 @@ findings are incorporated: test Compose isolation, loopback browser routing,
 versioned plan compatibility, SQLite/filesystem transaction boundaries,
 independent expected results and deterministic interruption barriers.
 
-Planning verification checks document links and coverage of R1–R5/Q1–Q7. No
-application test run, package installation, runtime write or implementation change
-is claimed for this planning turn. Prior test evidence is labeled above.
+The user explicitly approved both the local source checkpoint and the four
+test-only tools. Phase 1 established isolation/static checks and separately
+reviewed formatting. Phase 2 added browser regressions before the refresh fix.
+Phase 3 separately reviewed helper extraction and transactional setup. Phase 4
+delivered structured pilot contracts before linked plans. Phase 5 adds independent
+seeded models and deterministic process/I/O recovery checks. Each changed
+behavior has focused tests and a separate engineering reviewer.
 
-Before execution, resolve only the permissions still needed under
-[AGENTS.md](../AGENTS.md): authorization for the local source commit and the
-proposed test-only dependencies. The existing instructions say “Do not commit”
-unless explicitly requested and “Ask before adding third-party dependencies.”
-Do not re-request authorization once provided. Other routine implementation
-choices follow this plan and the existing acceptance contracts.
-
-**Recommended first implementation batch:** Phase 1 baseline and test isolation,
-followed by the approved quality tools. Human pilot operations may continue only
-under their existing operational requirements; this engineering plan does not
-change their status.
+The final commands, counts, timings, negative baselines, source/artifact evidence
+and limitations belong in [verification](verification.md). Human pilot operations
+remain subject to their own requirements; automated engineering tests do not
+supply clinical approval, device attestations or participant permission.

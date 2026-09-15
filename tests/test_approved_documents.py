@@ -3,10 +3,10 @@
 import hashlib
 import http.client
 import json
-from pathlib import Path
 import tempfile
 import threading
 import unittest
+from pathlib import Path
 
 from twin_lab.governance import DOCUMENTS
 from twin_lab.schemas import ValidationError
@@ -30,7 +30,9 @@ class ApprovedDocumentTests(unittest.TestCase):
         self.assertEqual(policy["approval"]["approved_by"], "project_user")
         self.assertIs(policy["permission"]["participant_ready"], False)
         self.assertTrue(all(value is None for value in policy["operator"].values()))
-        self.assertTrue(all(owner["accepted_assignee"] is None for owner in policy["owner_registry"]))
+        self.assertTrue(
+            all(owner["accepted_assignee"] is None for owner in policy["owner_registry"])
+        )
         self.assertEqual(overview["history"], [])
         self.assertEqual(overview["receipts"], [])
         self.assertIs(overview["readiness"]["actual_physician_capture_enabled"], False)
@@ -46,8 +48,13 @@ class ApprovedDocumentTests(unittest.TestCase):
         for record_class in ("RET-PERM", "RET-AUD"):
             self.assertEqual(retention[record_class]["years_after_pilot_close"], 1)
             self.assertNotIn("days_after_pilot_close", retention[record_class])
-        for flag in ("actual_physician_response_capture_enabled", "training_allowed",
-                     "research_reuse_allowed", "patient_data_allowed", "cloud_backup_allowed"):
+        for flag in (
+            "actual_physician_response_capture_enabled",
+            "training_allowed",
+            "research_reuse_allowed",
+            "patient_data_allowed",
+            "cloud_backup_allowed",
+        ):
             self.assertIs(policy["scope"][flag], False)
 
     def test_downloads_are_exact_approved_files_and_paths_are_allowlisted(self):

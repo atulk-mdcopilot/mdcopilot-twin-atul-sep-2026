@@ -5,7 +5,8 @@
 No pre-existing application stack was present. Twin Lab uses Python 3.12's
 standard library for a small local HTTP server, input validation, hashing, JSON,
 and SQLite, plus static HTML, CSS, and JavaScript. No pip or npm packages are
-required. A Docker runtime pinned by digest is recorded in `compose.yaml` and
+required by the application. Approved quality tools have a separate locked,
+offline test setup under `tests/quality/`. A Docker runtime pinned by digest is recorded in `compose.yaml` and
 `dependency-lock.json`; application code and tests run in the container.
 
 This keeps the local workflow runnable without an external database,
@@ -20,6 +21,28 @@ The Compose service publishes a loopback host port and mounts a data directory
 outside the checkout. Runtime configuration follows the official
 [Compose services reference](https://docs.docker.com/reference/compose-file/services/).
 See the README for exact commands and storage paths.
+
+## Persistence and migration ownership
+
+`persistence.py` owns the shared SQLite connection, record lookup, ordered reads
+and exact-request retry primitives. Domain modules own validation, meaningful
+errors and transaction boundaries. SQL identifiers come from an internal table
+allowlist; request values remain bound parameters. The catalog keeps its strict
+JSON decoder. Backup and restore connections retain their distinct read-only,
+copy and durability responsibilities.
+
+`migrations.py` owns ordered schema/index/append-only declarations. Store startup
+acquires a write lock before reading the schema version, rejects unsupported
+versions before changes, seeds immutable fixtures separately within the same
+transaction, validates/initializes the external journals and advances the version
+only on success. A newer concurrent upgrader cannot be overwritten by a stale
+version read. No `executescript()` implicitly commits this transaction.
+
+Filesystem journals have their own durable boundary and survive a SQLite
+rollback. Recovery must retain restrictions and reconcile those journals;
+it must not assume that rollback authorizes ordinary use. The behavior-preserving
+cleanup retained database version 3; later policy contract changes explicitly
+advance compatibility rather than rewriting historical payloads.
 
 ## Durable presentation and response records
 
@@ -106,8 +129,9 @@ The incorporated demo governance documents and policy choices have project-user
 approval recorded at 2026-09-10T23:33:19Z. Earlier v0.1 source/adaptation status
 was draft/unapproved; revision 0.2 preserves that history and records the new
 explicit approval. The application still permits incomplete operational drafts.
-Collection-plan wording is still planning text; exact participant permission now has a separate
-versioned receipt and capture gate. Frequency fields do not schedule backup
+New version 2 plans pin one Governance revision and show its policy read-only;
+legacy planning text remains in preserved history. Exact participant permission
+has a separate versioned receipt and capture gate. Frequency fields do not schedule backup
 jobs, and physical disposal requires an explicit offline operation.
 
 Manual backups use SQLite's online backup interface, verify the result, and stay
@@ -146,6 +170,36 @@ that required local assertions are recorded, not that legal compliance has been
 independently established. Project-user approval of the incorporated documents
 does not create an approved operational record or participant agreement.
 
+## Structured policy and explicit plan cutover
+
+Governance and permission schema 2.0 carry professional role, explicit UTC pilot
+dates and participant-facing session scope. New collection schema 2.0 pins an
+existing Governance ID and removes duplicated editable notice/retention fields.
+Database version 4 prevents an older binary, which does not understand these
+gates, from silently opening the new records. Response/export schema remains 1.2
+and new private policy text stays out of general export.
+
+Legacy records are read unchanged and retain their established gates until an
+explicit revision. New version 1 writes cannot remove a current version 2 pin
+or structured Governance scope. Historical exact retries return the old object
+without changing the latest version. A draft pin supports planning, but human
+capture requires current approved governance and a matching current plan; the
+checks repeat at permission, presentation and response save/retry boundaries.
+
+The assigned-case-set limit counts distinct versions per code across all plans
+under one Governance ID. Plan revision is not a new allowance. Repeats and
+corrections do not consume another version, and no timer/total-attempt promise is
+made. Every new approved structured Governance revision requires a new notice
+version and permission, including unchanged-text revisions, because it creates
+a new durable allowance. This prevents revisions from silently resetting scope.
+
+UTC semantics remain start-inclusive and end-exclusive after the close date.
+Calendar-year conversion records both the close and anniversary dates; February
+29 requires an explicit next-year convention. Editing the close date invalidates
+the conversion. Existing response deadlines stay frozen, never recalculated by
+new forms. These contracts use existing domain/schema modules; only persistence
+and migration coordination were added as shared runtime modules.
+
 ## Approved demo documents and remaining operational decisions
 
 The approval record uses `approved_by: project_user`,
@@ -157,10 +211,10 @@ The source Downloads files remain unchanged.
 
 Demo retention/withdrawal values are approved project policy choices, not legal
 minimums. One-year permission/audit periods are calendar-year policies; the
-application's day-based fields remain unset until the pilot close date and a
-reviewed conversion are available. No calendar year is silently treated as 365
-days. Role proposals and missing contacts remain unresolved, and the participant
-notice is not yet ready to offer. Its completed local version, required review,
+application records the close date and selected calendar anniversary before
+approving matching day counts. No calendar year is silently treated as 365
+days. Source role/contact placeholders remain unresolved; the actual operating
+record must be reviewed privately. Its completed notice, required review,
 accepted appointments, device/control evidence and explicit participant choice
 remain distinct from document approval. Future research wording and its periods
 remain deferred drafts. Existing responses acquire no permission, classification,

@@ -15,9 +15,9 @@ The [first-build brief](MDcopilot_Twin_First_Build.md) and
 [case/collection extension](docs/milestone-2.md) and
 [governance/lifecycle contract](docs/milestone-3.md) define the implemented scope.
 
-The [quality implementation plan](docs/quality-plan.md) proposes the next five
-engineering phases, their acceptance checks, and the seven quality rules.
-It is a plan; its tooling and behavior changes are not implemented yet.
+The [quality implementation plan](docs/quality-plan.md) defines five engineering
+phases and seven quality rules. See [verification](docs/verification.md) for
+actual implementation and test evidence.
 
 ## Setup and start
 
@@ -54,6 +54,15 @@ docker compose down
 
 Application source is local; no frontend build or dependency-install command is
 needed. After editing source, restart with `docker compose restart twin-lab`.
+
+For an existing installation, this quality update advances SQLite to version 4
+on startup. Before restarting, create and verify a controlled backup with the
+running application's backup action and retain both authoritative lifecycle
+journals. Rehearse restoration in a separate directory as described below.
+Close old browser forms, restart, and reload the page before using the new forms.
+Older application binaries reject version 4; use a forward fix or a separate,
+journal-reconciled restore, never overwrite the live database to roll back.
+The quality implementation itself did not restart or upgrade the live service.
 
 ## Capture, review, correct, and export
 
@@ -135,19 +144,24 @@ before submitting again. The server rejects stale writes instead of forking it.
 ## Collection plan: demo rules and assignments
 
 Open **Collection plan** to save versioned draft rules. Enter a plan title,
-owner code, allowed physician codes, draft permission planning text and
-its version, retention days, backup owner, backup frequency, and backup retention
-days. Do not use names, email addresses, patient information, or credentials.
+owner code, allowed physician codes, backup owner/frequency and assignment notes.
+Explicitly select an existing **Governance revision**. Its exact notice, session
+scope and retention policy appear read-only; edit these decisions in Governance.
+Save an operating draft there first if no revision exists. Do not put names,
+email addresses, patient information, or credentials in collection-plan fields.
 Codes contain 1–40 ASCII letters, digits, underscores, or hyphens and are
 case-sensitive; they are local
 labels, not accounts. Keep any identity lookup separately from this application.
 
 The incorporated demo governance documents and policy choices are approved as
-described below. Collection-plan text remains planning information; it does not
+described below. A collection-plan link remains planning information; it does not
 create participant permission or accepted appointments. Keep missing operational
-details incomplete until they are entered locally. Day counts must be whole
-numbers from 1 to 3650. Revised rules append a new protocol; previous versions
-remain in local history and export.
+details incomplete until they are entered locally. Revised rules append a new
+protocol; previous versions, including old editable policy values, remain in
+history and export. New forms save version 2 plans. A draft Governance revision
+can be linked for planning, but physician participation requires a link to the
+current approved revision. A later Governance revision makes that link stale;
+review and explicitly save a new link. The app never updates it automatically.
 
 Create an assignment using the latest saved protocol, a physician code listed in
 that protocol, and an exact case version. Assignment is manual and pins those
@@ -156,8 +170,13 @@ assignment. Later protocol or case edits do not change existing assignments or
 saved responses. Readiness identifies missing rules and unapproved assigned
 versions. Even a complete plan remains **demo-only**.
 
-This planning field does not collect permission or control participation. Use
-the separate Governance workflow below for exact participant permission.
+For a structured pilot, the assigned-case-set limit counts distinct case versions
+per physician across all plans linked to the same Governance revision. A new plan
+does not reset it. Repeat responses at the same version and linked corrections
+do not consume another distinct-version slot; they still require current
+authorization. The limit does not cap total responses or session duration.
+
+Use the separate Governance workflow below for exact participant permission.
 Backup frequency is a recorded responsibility, not an automatic job.
 There is no study-enable switch. Actual study collection needs a separately
 authorized design and implementation after case/workflow review.
@@ -179,11 +198,20 @@ Approved demo periods include the earlier of 90 days from original submission
 or 30 days after pilot closure, 30-day export/backup limits, and withdrawal
 disposal within 30 days after verification or earlier expiry. Permission and
 audit records have a one-calendar-year period after pilot closure. Their current
-application fields use days: leave them unset until the close date is known and
-the appropriate calendar-year day counts are reviewed. Do not assume 365 days.
+application fields use days: choose the close date and use **Calculate
+calendar-year periods** to record the anniversary basis and both day counts.
+For February 29, explicitly choose February 28 or March 1 in the following year.
+Changing the close date or that choice clears the conversion until recalculated.
+Approval requires a matching basis and counts; a year is never assumed to be 365 days.
 
 The **Local operating record** form separates operator/contacts, exact participant notice/version, retention
 periods, accepted responsible people, and dated evidence of operational checks.
+It now also records professional role, pilot start/close dates (UTC), a
+participant-facing session description and a maximum of 1–200 distinct assigned
+case versions per physician. The pilot starts at 00:00 UTC on its start date and
+ends at 00:00 UTC after its close date. Approval may be prepared before the start;
+physician participation waits until the window opens. Missing fields in older
+records remain unknown; they are never inferred from notes.
 For a new record it fills the six approved response/closure/withdrawal/export/
 backup day values and document/policy version labels. It does not save a record
 automatically. Notice text, contacts, role acceptances, check evidence and the
@@ -196,12 +224,19 @@ These records are local assertions, not verified identities or legal approval.
 Never check controls or accept a role on someone else's behalf.
 
 **Actual physician demo** remains unavailable until current approved governance
-is complete. Create reviewed assignments in Collection plan, show the approved
+is complete and a current collection plan is linked to it. Create reviewed
+assignments in Collection plan, show the approved
 notice, and record the participant's explicit Agree or Decline. Neither choice
 is preselected. Download the exact permission receipt for the participant. An
-agreed receipt is tied to the current notice, code and approved assigned case.
+agreed receipt preserves the exact notice, structured session, professional role
+and UTC window, and is checked against the code and approved assigned case.
 The server checks permission again on save. A new notice/revocation, withdrawal,
 expired pilot or changed case approval can prevent capture from an old tab.
+Every new approved structured Governance revision requires a new notice version
+and new participant permission, even if its text is unchanged: it creates a new
+case-set allowance. Exact retries return the original record. Legacy operating
+records and plans retain their established gates until deliberately revised;
+saving structured Governance requires a linked plan before human capture resumes.
 
 Historical answers remain unchanged and show **unverified origin/permission**.
 Their corrections retain that status. Do not classify them as fabricated or
@@ -283,18 +318,38 @@ records never acquire a retention period simply because a new plan was saved.
 
 ## Tests
 
-Run the automated test suite in Docker:
+Set up the approved, separate test images once (downloads require network access):
 
 ```sh
-docker compose run --rm twin-lab python -m unittest discover -s tests -v
+sh tests/quality/setup.sh --approved
 ```
 
-Run the Git exclusion check with host Git (it stages synthetic sentinels in an
-isolated temporary repository and leaves this checkout's index untouched):
+Run the local quality gate:
 
 ```sh
-sh tests/check-git-ignore.sh
+sh tests/quality/run.sh --fast
+sh tests/quality/run.sh --full
 ```
+
+Fast mode checks syntax, lint, formatting, gradual Python/JavaScript types,
+top-level Python tests, Git exclusions and the gate's own failure detection.
+Full mode also requires real Chromium browser tests, historical compatibility,
+action sequences and process-interruption recovery tests. Missing tools or
+required suites fail; the runner never installs packages or hides skipped checks.
+Exact packages, transitive locks, image digests and static scope are under
+`tests/quality/`. These tools are not application dependencies.
+
+The test Compose file is standalone. It publishes no ports, has no external
+network and mounts no actual response storage, home directory or browser profile.
+Its browser shares the test server's loopback namespace. Test data is temporary;
+JSON results, source hashes, versions, logs and failure traces go to the fresh
+external `twin-lab-quality.*` directory printed by each run. Preserve that path
+when reporting a failure. Host shell/Git orchestrate the gate; all Python and
+Node code runs in containers. Do not combine test Compose with normal Compose.
+
+The Git-exclusion test stages synthetic sentinels in an isolated repository and
+leaves this checkout's index untouched. It can also be run independently using
+`sh tests/check-git-ignore.sh`.
 
 Tests use temporary databases and do not need physician data. They cover the
 validated schemas, exact snapshots and values, persistence, duplicate retry,

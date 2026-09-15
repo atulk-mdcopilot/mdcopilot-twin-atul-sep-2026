@@ -1,10 +1,16 @@
 # Ordered follow-up backlog
 
-The [quality implementation plan](quality-plan.md) defines the proposed local
-engineering work: a source checkpoint and quality gate, automated browser tests,
-shared persistence, linked policy/pilot setup, and recovery testing. Follow its
-phase dependencies and acceptance checks separately from the operational and
-clinical decisions below. Planning does not mark any implementation complete.
+The [quality implementation plan](quality-plan.md) covers the implemented local
+source checkpoint, isolated quality gate, automated browser tests, shared
+persistence, linked policy/pilot setup and recovery coverage. Actual results and
+remaining engineering limits are in [verification](verification.md). These
+engineering changes do not complete operational or clinical decisions.
+
+Before using the new forms on an existing installation, make a verified
+controlled backup, retain both authoritative journals, rehearse a separate
+restore, and restart/reload deliberately. SQLite advances to version 4; an older
+binary cannot be used against that upgraded database. This implementation left
+the actual application process and response storage untouched.
 
 The first local extension now provides immutable case reviews/revisions, five
 matched demo pairs, versioned draft collection rules, manual pinned assignments,
@@ -29,14 +35,16 @@ rules do not enable study collection.
    versions; a future family-revision workflow requires separate scope.
 3. **Complete operational governance.** The demo documents and policy values
    have project-user approval recorded at 2026-09-10T23:33:19Z. Record the missing
-   operator/contacts, accepted people, exact notice/session, pilot close date and
+   operator/contacts, professional role, accepted people, exact notice/session,
+   distinct-version allowance, UTC pilot start/close dates and
    qualified review determination in Governance. Apply the approved demo periods;
    calculate the permission/audit calendar-year day counts only after the close
    date and calendar handling are reviewed. Reconcile the completed notice
    with verified device/access controls, controlled copies and administrative
    retention procedures. Keep operational drafts incomplete until their remaining
    decisions and attestations are recorded; document approval remains preserved.
-   Choose codes/assignments in Collection plan and obtain explicit participant
+   Explicitly link a Collection plan to the current approved Governance revision,
+   choose codes/assignments, and obtain explicit participant
    permission only after local human-demo approval and operational rehearsal.
 4. **Study readiness decision.** Before separately authorized study collection,
    review the local permission/lifecycle controls, code identity handling, access,
@@ -62,3 +70,9 @@ rules do not enable study collection.
    evaluation criteria. Keep unaided physician observations separate from model
    outputs. No model advice, training, fine-tuning, probability estimates, or
    learned-twin claims belong in this milestone.
+
+Engineering follow-ups: expand gradual JavaScript type checking to the remaining
+capture/Case lab/review modules as they change; measure lifecycle review/export
+with larger fabricated datasets before optimizing repeated reads. No persistent
+restriction cache, arbitrary coverage target or performance claim is introduced.
+Process-interruption tests cover application recovery, not hardware power loss.

@@ -24,13 +24,16 @@ project policy choices; illustrative codes are not actual assignments. Original
 Downloads files and the historical fact that v0.1 was unapproved are preserved.
 
 The operator must supply the purpose/session wording, contacts, pilot closure
-date, responsible people and accepted roles, privacy/review determination,
+date, professional role, pilot start, session description/case-set limit,
+responsible people and accepted roles, privacy/review determination,
 completed permission text/version and operational evidence. Approved demo policy
 values can be incorporated into the operational form without inventing them.
 The approved one-year permission/audit periods mean a calendar year after pilot
-closure. Because the current form takes whole days, leave those fields unset
-until the close date is known and the calendar-year conversion, including leap
-year handling, has been reviewed. Real contacts,
+closure. The form calculates whole days only after a close date is chosen and
+records that close date and the next calendar anniversary. February 29 requires
+an explicit February 28 or March 1 convention. Changing the date/convention
+invalidates the old conversion. Approval rejects missing or mismatched bases and
+permission/audit day counts. Real contacts,
 appointments and receipts are private runtime records outside Git. The source
 documents retain proposed roles and unresolved operational placeholders. Six
 local demo roles are supported; the future methods/research role remains deferred.
@@ -55,6 +58,13 @@ local demo roles are supported; the future methods/research role remains deferre
   actor's dated controls attestation, and the privacy owner's approval code and
   review determination. Revisions must identify the current version. Draft or
   revoked current versions close the human capture gate; a closed pilot does too.
+- New forms use governance schema `2.0`: professional role, UTC start/close
+  dates, participant-facing session description, `max_distinct_case_versions`
+  (1–200), and a recorded calendar-year conversion basis. Incomplete drafts are
+  allowed. The start is inclusive at 00:00 UTC; the end is exclusive at 00:00 UTC
+  after the close date. Approval can be prepared before the window opens.
+  Earlier records keep their bytes and established gate until deliberately
+  revised; no migration fills missing fields from notes.
 - These are explicit local attestations, not identity verification, legal
   determinations, independent control testing, or electronic signatures. The
   prototype remains single-user; codes provide no authentication or access roles.
@@ -63,6 +73,10 @@ local demo roles are supported; the future methods/research role remains deferre
   current approved notice and a code listed in the current plan are required.
   Receipts preserve exact notice text/version/SHA-256, code, choice and server UTC
   time. A changed notice requires a new document version and new permission.
+- Version 2 receipts also preserve the exact structured session, professional
+  role and UTC pilot window. Every new approved version 2 Governance revision
+  requires a new notice version and new permission, including unchanged-text
+  revisions. Exact request retries preserve the original record and scope.
 - `GET /api/permissions/<receipt UUID>` downloads the participant's exact copy.
   This is a local custodian workflow, not a participant portal or identity check.
   A decline records no response and invalidates earlier agreement for new capture.
@@ -73,6 +87,30 @@ control of downloaded copies. The software records these assertions; it cannot
 verify the Mac's encryption or who can use the device. Never make assertions
 solely because automated tests passed. Complete operational review of the actual
 notice before accepting physician responses.
+
+## Linked collection planning
+
+New collection forms save protocol schema `2.0`, explicitly pinning one existing
+`governance_id` alongside codes, ownership, backup frequency and assignment notes.
+Notice, session and retention are read-only projections of that saved revision.
+A draft can be pinned for planning. Human permission, presentation and save/retry
+require the pin to equal current approved governance. Structured governance cannot
+use an old unlinked plan to bypass that requirement. New governance makes old
+links stale; the operator must explicitly revise the plan and record permission.
+
+The distinct-version allowance is the union of case versions assigned to each
+code across all plans pinned to the same Governance revision. Plan revisions
+cannot reset it. Reassigning an existing version in a new plan, repeat responses
+and corrections add no distinct version. Authorization is still rechecked, so
+historical corrections cannot silently move to new plans or permissions. This
+is neither a time limit nor a total-response limit.
+
+Strict legacy plan reads/writes and exact retries remain supported before plan
+cutover. Once a version 2 plan is current, a new version 1 write is rejected even
+if it names the current parent. An identical historical retry may return the
+original without making it current. A version 2 plan may explicitly pin old
+governance; absent structured fields stay unknown and established legacy gates
+remain in force. No migration automatically binds a plan or approves a case.
 
 ## Capture and compatibility
 
@@ -91,7 +129,10 @@ notice before accepting physician responses.
   Corrections preserve code, case snapshot, planning references and provenance.
 
 Old unsaved presentations must be reopened; old saved payloads are never
-rewritten. Database versions 1/2 migrate to 3, preserving original payload bytes.
+rewritten. Supported database versions 1/2/3 advance to 4, preserving original
+payload and request-body bytes. New databases also use 4; unknown newer versions
+are rejected before writes. Setup acquires the SQLite write lock before reading
+the version and advances it only after successful schema/fixture/journal setup.
 New response schema `1.2` adds capture mode, governance/permission identifiers,
 permission version/hash and explicit false training/research/public-release
 flags. Existing response schemas remain unchanged. New policy never silently
@@ -134,7 +175,9 @@ promise of forensic erasure from the filesystem or device.
 ## Exports, backups and restoration
 
 General response export is schema `1.2`; it excludes private governance owner
-registries and permission documents. Response objects retain their own original
+registries and permission documents, including new role/session/contact text.
+Version 2 collection plans export their pin and planning fields, not a duplicated
+policy. Historical version 1 plan values remain intact. Response objects retain their own original
 schemas. Export only includes chains currently available for ordinary use.
 `GET /api/export` creates a managed local copy and content-free manifest, with
 source identifiers and the earliest applicable source/copy expiry. The browser's

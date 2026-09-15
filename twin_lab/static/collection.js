@@ -8,11 +8,14 @@ const labels = {
   retention_days: "Response retention (days)", backup_owner_code: "Backup owner code",
   backup_frequency: "Backup frequency", backup_retention_days: "Backup retention (days)",
   case_assignments: "At least one version-pinned demo assignment",
+  governance_id: "An existing Governance revision", stale_governance: "The plan is linked to an earlier Governance revision",
+  linked_plan: "Link a new plan to the current Governance revision",
 };
 
 export function initCollection(container, {onOpenAssignment}) {
   let collection = null;
   let catalog = null;
+  let governance = null;
   let editors = [];
   let status = null;
   let loading = false;
@@ -22,7 +25,7 @@ export function initCollection(container, {onOpenAssignment}) {
     loading = true;
     if (status) { status.textContent = "Loading local collection planning records…"; status.classList.remove("error"); }
     try {
-      [collection, catalog] = await Promise.all([request("/api/collection"), request("/api/catalog")]);
+      [collection, catalog, governance] = await Promise.all([request("/api/collection"), request("/api/catalog"), request("/api/governance")]);
       if (!force && editors.some(editor => editor.protectedDraft())) {
         status.textContent = "Saved records were refreshed. Your current form is retained; use Refresh to discard it and display the latest records.";
       } else render();
@@ -40,27 +43,39 @@ export function initCollection(container, {onOpenAssignment}) {
 
   function protocolForm() {
     const current = collection.current || {};
-    const ui = makeForm("Save collection rules", "Record assignment planning decisions. Unknown fields can remain blank in an incomplete draft. This legacy plan does not approve participant permission or enforce retention. Use Governance for accepted policy and verification. Saving preserves all earlier protocol versions.", "Save protocol revision");
+    const ui = makeForm("Save collection rules", "Record codes, ownership and assignment planning. Saving links a new plan to the selected Governance revision. Edit notice, session and retention decisions in Governance; the policy shown here is read-only. Earlier plans and assignments remain preserved.", "Save protocol revision");
     field(ui.fields, "title", "Plan title", "text", current.title || "", {required: true, maxLength: 200});
     codeField(ui.fields, "owner_code", labels.owner_code, current.owner_code || "", false);
     field(ui.fields, "physician_codes", labels.physician_codes, "textarea", (current.physician_codes || []).join("\n"), {maxLength: 8200, help: "Up to 200 unique codes, one per line or separated by commas. Keep any code-to-person mapping outside Twin Lab and Git."});
-    field(ui.fields, "consent_statement", labels.consent_statement, "textarea", current.consent_statement || "", {maxLength: 12000, rows: 5, help: "Planning reference only. Exact text is preserved. A saved plan is not approval or a participant's permission receipt."});
-    field(ui.fields, "consent_version", labels.consent_version, "text", current.consent_version || "", {maxLength: 128});
-    field(ui.fields, "retention_days", labels.retention_days, "number", current.retention_days, {min: 1, max: 3650, step: 1, help: "Enter the approved period (1–3650 days). Blank means undecided; there is no automatic deletion."});
+    const pin = field(ui.fields, "governance_id", "Governance revision", "select", current.governance_id || "", {required: true, choices: [["", "Choose an existing Governance revision"], ...governance.history.map(item => [item.governance_id, `${item.title} · ${item.status} · ${item.created_at}`])], help: "Draft governance may be used for planning. Physician participation requires this link to match the current approved policy. Links never update automatically."});
+    const policyPanel = node("div", undefined, "planning-record");
+    const showPolicy = () => {
+      policyPanel.replaceChildren(node("h3", "Read-only policy from Governance"));
+      const policy = governance.history.find(item => item.governance_id === pin.value);
+      if (!policy) { policyPanel.append(node("p", "Choose an existing revision. Save an operating draft in Governance first if none exists.")); return; }
+      policyPanel.append(node("p", `Notice version: ${policy.permission.version || "Unknown"}`), node("div", policy.permission.text || "Notice text has not been recorded.", "exact-notice"));
+      policyPanel.append(node("p", policy.session?.description || "Session description: unknown in this historical revision."));
+      policyPanel.append(node("p", `Maximum distinct case versions per physician: ${policy.session?.max_distinct_case_versions ?? "Unknown"}. The allowance spans all plans linked to this revision; repeat responses and corrections do not add a distinct version.`, "small muted"));
+      policyPanel.append(node("p", `UTC pilot dates: ${policy.operator.pilot_start_date || "Unknown start"} through ${policy.operator.pilot_close_date || "Unknown close"}.`, "small muted"));
+      const periods = policy.retention;
+      policyPanel.append(node("p", `Response expiry: earlier of ${periods.response_days ?? "undecided"} days after original submission or ${periods.after_close_days ?? "undecided"} days after closure. Export age: ${periods.export_days ?? "undecided"} days. Backup age: ${periods.backup_days ?? "undecided"} days.`, "small muted"), jsonDetails("Exact pinned retention policy", periods));
+      if (policy.governance_id !== governance.current?.governance_id) policyPanel.append(node("p", "Stale policy link: Governance changed. Review the new notice and explicitly save a revised plan before physician participation.", "planning-review-state"));
+      else if (policy.status !== "approved") policyPanel.append(node("p", "This policy is a planning draft or revoked; it does not enable physician participation.", "planning-review-state"));
+    };
+    pin.addEventListener("change", showPolicy);
+    showPolicy();
+    ui.fields.append(policyPanel);
     codeField(ui.fields, "backup_owner_code", labels.backup_owner_code, current.backup_owner_code || "", false);
     field(ui.fields, "backup_frequency", "Proposed backup frequency", "select", current.backup_frequency || "manual_before_changes", {required: true, choices: [["manual_before_changes", "Manual, before changes"], ["daily_when_collecting", "Daily when collecting"], ["weekly_when_collecting", "Weekly when collecting"]], help: "The initial manual frequency is a proposal. Confirm or replace it with the owner’s plan. No automatic backup scheduler is installed."});
-    field(ui.fields, "backup_retention_days", labels.backup_retention_days, "number", current.backup_retention_days, {min: 1, max: 3650, step: 1, help: "1–3650 days. The owner must handle backup retention; no files are deleted automatically."});
     field(ui.fields, "notes", "Plan notes", "textarea", current.notes || "", {maxLength: 5000, help: "Assignment rationale, local operating procedures, and unresolved decisions. No names, credentials, or patient information."});
     ui.fields.append(node("p", "Assignment strategy: manual selection pinned to an exact case version. Purpose: demo. Study collection: disabled.", "planning-review-state"));
     editors.push(wireMutation(ui, "/api/protocols", () => {
       const values = Object.fromEntries(new FormData(ui.form));
-      const codes = values.physician_codes.split(/[\s,]+/).filter(Boolean);
+      const codes = String(values.physician_codes).split(/[\s,]+/).filter(Boolean);
       if (codes.length > 200) throw new Error("Use no more than 200 allowed physician codes.");
       if (codes.some(code => !/^[A-Za-z0-9_-]{1,40}$/.test(code))) throw new Error("Each physician code must use 1–40 letters, numbers, underscores, or hyphens.");
       if (new Set(codes).size !== codes.length) throw new Error("Each allowed physician code must appear only once.");
-      return {...values, based_on_protocol_id: current.protocol_id || null, physician_codes: codes,
-        retention_days: values.retention_days === "" ? null : Number(values.retention_days),
-        backup_retention_days: values.backup_retention_days === "" ? null : Number(values.backup_retention_days)};
+      return {...values, protocol_schema_version: "2.0", based_on_protocol_id: current.protocol_id || null, physician_codes: codes};
     }, saved, () => refresh(true)));
     return ui.panel;
   }
@@ -69,6 +84,8 @@ export function initCollection(container, {onOpenAssignment}) {
     const panel = node("article", undefined, "panel planning-card");
     panel.append(node("h2", "Collection planning completeness"), node("p", "Study collection is disabled, including when all planning fields are complete. Actual physician demo participation requires separate Governance readiness and an explicit permission receipt. A saved plan does not provide either.", "planning-review-state"));
     if (!collection.current) panel.append(node("p", "No collection plan has been saved. Start with a draft and record the remaining decisions.", "planning-empty"));
+    else if (collection.current.protocol_schema_version === "2.0" && collection.current.governance_id !== governance.current?.governance_id) panel.append(node("p", "Stale plan: the current Governance revision differs from this plan's saved link. No link, assignment or permission is replaced automatically.", "planning-review-state"));
+    else if (collection.current.protocol_schema_version === "1.0") panel.append(node("p", "This is a preserved legacy plan. Its historical planning text and periods are available below. Saving the form creates an explicitly linked plan; structured pilot participation requires that link.", "small muted"));
     const readiness = collection.readiness;
     panel.append(node("h3", readiness.missing_fields.length ? "Incomplete planning fields" : "Planning fields recorded"));
     if (readiness.missing_fields.length) {

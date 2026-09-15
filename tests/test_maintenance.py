@@ -1,14 +1,15 @@
 """Offline command boundary tests, using fabricated records in temporary storage."""
 
-from contextlib import redirect_stderr, redirect_stdout
-from io import StringIO
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
+from pathlib import Path
 from uuid import uuid4
 
 from helpers import qa_presentation, values
+
 from twin_lab.maintenance import main
 from twin_lab.store import Store
 
@@ -19,7 +20,9 @@ class MaintenanceTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
         self.store = Store(self.directory / "twin-lab.sqlite3")
-        presentation = self.store.present(**qa_presentation(case_id=self.store.cases()[0]["case_id"]))
+        presentation = self.store.present(
+            **qa_presentation(case_id=self.store.cases()[0]["case_id"])
+        )
         self.response, _ = self.store.submit(presentation["presentation_id"], values())
 
     def run_command(self, *arguments):
@@ -33,9 +36,15 @@ class MaintenanceTests(unittest.TestCase):
         plan = self.run_command("plan", "--output", path)
         original = path.read_bytes()
         self.assertEqual(plan["eligible_root_ids"], [])
-        for arguments in (("plan", "--output", path),
-                          ("apply", "--plan", path, "--actor-code", "TEST", "--confirm", "wrong")):
-            with self.subTest(arguments=arguments), redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:
+        for arguments in (
+            ("plan", "--output", path),
+            ("apply", "--plan", path, "--actor-code", "TEST", "--confirm", "wrong"),
+        ):
+            with (
+                self.subTest(arguments=arguments),
+                redirect_stderr(StringIO()),
+                self.assertRaises(SystemExit) as error,
+            ):
                 self.run_command(*arguments)
             self.assertEqual(error.exception.code, 2)
             self.assertEqual(path.read_bytes(), original)
@@ -57,5 +66,7 @@ class MaintenanceTests(unittest.TestCase):
     def test_missing_data_directory_does_not_create_empty_replacement_database(self):
         missing = self.directory / "missing"
         with redirect_stderr(StringIO()), self.assertRaises(SystemExit):
-            main(["--data-dir", str(missing), "plan", "--output", str(self.directory / "plan.json")])
+            main(
+                ["--data-dir", str(missing), "plan", "--output", str(self.directory / "plan.json")]
+            )
         self.assertFalse(missing.exists())

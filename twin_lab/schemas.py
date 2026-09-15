@@ -4,15 +4,25 @@ import hashlib
 import json
 import re
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
 SCHEMA_VERSION = "1.2"
-CASE_TEXT = {"case_id", "family_id", "version", "title", "provenance",
-             "care_setting", "narrative"}
-CASE_FLAGS = {"synthetic": True, "review_status": "unreviewed",
-              "eligible_for_study": False, "collection_purpose": "demo"}
-VALUE_FIELDS = {"physician_code", "next_action", "next_information",
-                "decision_change", "rationale", "confidence"}
+CASE_TEXT = {"case_id", "family_id", "version", "title", "provenance", "care_setting", "narrative"}
+CASE_FLAGS = {
+    "synthetic": True,
+    "review_status": "unreviewed",
+    "eligible_for_study": False,
+    "collection_purpose": "demo",
+}
+VALUE_FIELDS = {
+    "physician_code",
+    "next_action",
+    "next_information",
+    "decision_change",
+    "rationale",
+    "confidence",
+}
 
 
 class ValidationError(ValueError):
@@ -27,7 +37,10 @@ class NotFound(LookupError):
     """Requested local object does not exist."""
 
 
-def now():
+Record = dict[str, Any]  # JSON records are validated by the exact domain schemas.
+
+
+def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
@@ -79,7 +92,12 @@ def validate_case(value):
         if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", value[key]):
             raise ValidationError(f"Invalid {key}.")
     for key, required in CASE_FLAGS.items():
-        if key == "review_status" and value[key] in ("unreviewed", "approved", "needs_revision", "rejected"):
+        if key == "review_status" and value[key] in (
+            "unreviewed",
+            "approved",
+            "needs_revision",
+            "rejected",
+        ):
             continue
         if type(value[key]) is not type(required) or value[key] != required:
             raise ValidationError("Cases must be synthetic, unreviewed, ineligible demo fixtures.")
@@ -96,18 +114,22 @@ def validate_case(value):
 def validate_values(value):
     exact_keys(value, VALUE_FIELDS)
     for key in VALUE_FIELDS - {"confidence"}:
-        text_field(value[key], key.replace("_", " "),
-                   limit=128 if key == "physician_code" else 5000,
-                   required=key != "rationale")
+        text_field(
+            value[key],
+            key.replace("_", " "),
+            limit=128 if key == "physician_code" else 5000,
+            required=key != "rationale",
+        )
     validate_code(value["physician_code"])
     if value["confidence"] is not None and value["confidence"] not in ("low", "moderate", "high"):
         raise ValidationError("Decision confidence must be low, moderate, high, or omitted.")
     return value
 
 
-def canonical_json(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-                      allow_nan=False)
+def canonical_json(value: Any) -> str:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    )
 
 
 def snapshot_hash(value):
@@ -129,7 +151,6 @@ def _invalid_constant(_value):
 
 def read_json(value):
     try:
-        return json.loads(value, object_pairs_hook=_unique_object,
-                          parse_constant=_invalid_constant)
+        return json.loads(value, object_pairs_hook=_unique_object, parse_constant=_invalid_constant)
     except (ValueError, UnicodeError, RecursionError) as exc:
         raise ValidationError("Malformed JSON.") from exc

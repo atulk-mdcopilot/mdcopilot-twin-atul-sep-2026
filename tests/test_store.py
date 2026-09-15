@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import UUID
 
 from helpers import FIXTURES, values
+
 from twin_lab.schemas import ValidationError
 from twin_lab.store import Conflict, NotFound, Store
 
@@ -24,7 +25,9 @@ class StoreTests(unittest.TestCase):
         self.case = self.store.cases()[0]
 
     def present(self):
-        return self.store.present(case_id=self.case["case_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        return self.store.present(
+            case_id=self.case["case_id"], capture_mode="fabricated_qa", qa_acknowledged=True
+        )
 
     def save(self, submitted=None):
         presentation = self.present()
@@ -42,8 +45,10 @@ class StoreTests(unittest.TestCase):
         self.assertFalse(duplicate)
         self.assertEqual(submitted, original)
         self.assertEqual(response["original_values"], original)
-        normalized = {key: value.strip() if isinstance(value, str) else value
-                      for key, value in original.items()}
+        normalized = {
+            key: value.strip() if isinstance(value, str) else value
+            for key, value in original.items()
+        }
         self.assertEqual(response["normalized_values"], normalized)
         self.assertEqual(response["physician_code"], "DEMO_01")
         self.assertEqual(response["case_id"], self.case["case_id"])
@@ -52,8 +57,11 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(response["response_schema_version"], "1.2")
         self.assertEqual(response["case_snapshot"], self.case)
         self.assertEqual(response["presented_at"], presentation["presented_at"])
-        digest = hashlib.sha256(json.dumps(self.case, sort_keys=True,
-            separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(
+            json.dumps(self.case, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+                "utf-8"
+            )
+        ).hexdigest()
         self.assertEqual(response["snapshot_sha256"], digest)
         self.assertEqual(presentation["snapshot_sha256"], digest)
         self.assertIs(response["ai_advice_shown"], False)
@@ -63,10 +71,13 @@ class StoreTests(unittest.TestCase):
         self.assertIsNone(response["supersedes_response_id"])
         UUID(response["response_id"])
         UUID(response["presentation_id"])
-        times = [datetime.fromisoformat(response[key].replace("Z", "+00:00"))
-                 for key in ("presented_at", "submitted_at")]
-        self.assertTrue(all(timestamp.utcoffset() == timezone.utc.utcoffset(timestamp)
-                            for timestamp in times))
+        times = [
+            datetime.fromisoformat(response[key].replace("Z", "+00:00"))
+            for key in ("presented_at", "submitted_at")
+        ]
+        self.assertTrue(
+            all(timestamp.utcoffset() == timezone.utc.utcoffset(timestamp) for timestamp in times)
+        )
         self.assertLessEqual(times[0], times[1])
 
     def test_restart_and_fixture_changes_preserve_original_presentation(self):
@@ -81,7 +92,11 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(response["case_snapshot"], self.case)
         self.assertEqual(response["case_version"], self.case["version"])
         self.assertEqual(Store(self.db, self.fixture_path).responses(), [response])
-        correction = restarted.present(supersedes_response_id=response["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        correction = restarted.present(
+            supersedes_response_id=response["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         self.assertEqual(correction["case_snapshot"], self.case)
 
     def test_invalid_submission_leaves_no_saved_observation(self):
@@ -108,35 +123,59 @@ class StoreTests(unittest.TestCase):
     def test_concurrent_duplicate_saves_create_one_observation(self):
         presentation = self.present()
         with ThreadPoolExecutor(max_workers=6) as executor:
-            results = list(executor.map(
-                lambda _: self.store.submit(presentation["presentation_id"], values()),
-                range(6),
-            ))
+            results = list(
+                executor.map(
+                    lambda _: self.store.submit(presentation["presentation_id"], values()),
+                    range(6),
+                )
+            )
         self.assertEqual(len({response["response_id"] for response, _ in results}), 1)
         self.assertEqual(sum(not duplicate for _, duplicate in results), 1)
         self.assertEqual(len(self.store.responses()), 1)
 
     def test_explicit_correction_preserves_original_and_requires_same_code(self):
         first = self.save()
-        presentation = self.store.present(supersedes_response_id=first["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        presentation = self.store.present(
+            supersedes_response_id=first["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         with self.assertRaises(Conflict):
             self.store.submit(presentation["presentation_id"], values(physician_code="OTHER"))
         self.assertEqual(self.store.responses(), [first])
-        corrected, duplicate = self.store.submit(presentation["presentation_id"],
-            values(physician_code="DEMO_01", next_action="An explicit corrected action."))
+        corrected, duplicate = self.store.submit(
+            presentation["presentation_id"],
+            values(physician_code="DEMO_01", next_action="An explicit corrected action."),
+        )
         self.assertFalse(duplicate)
         self.assertEqual(corrected["supersedes_response_id"], first["response_id"])
         self.assertNotEqual(corrected["response_id"], first["response_id"])
         self.assertEqual(self.store.responses(), [first, corrected])
         with self.assertRaises(Conflict):
-            self.store.present(supersedes_response_id=first["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        latest = self.store.present(supersedes_response_id=corrected["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+            self.store.present(
+                supersedes_response_id=first["response_id"],
+                capture_mode="fabricated_qa",
+                qa_acknowledged=True,
+            )
+        latest = self.store.present(
+            supersedes_response_id=corrected["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         self.assertEqual(latest["supersedes_response_id"], corrected["response_id"])
 
     def test_two_pending_corrections_cannot_create_forked_history(self):
         first = self.save()
-        left = self.store.present(supersedes_response_id=first["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        right = self.store.present(supersedes_response_id=first["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        left = self.store.present(
+            supersedes_response_id=first["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
+        right = self.store.present(
+            supersedes_response_id=first["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         second, _ = self.store.submit(left["presentation_id"], values(next_action="Correction A"))
         with self.assertRaises(Conflict):
             self.store.submit(right["presentation_id"], values(next_action="Correction B"))
@@ -144,13 +183,31 @@ class StoreTests(unittest.TestCase):
 
     def test_export_envelope_contains_every_saved_original_and_revision(self):
         first = self.save(values(next_action="<script>local text only</script>"))
-        presentation = self.store.present(supersedes_response_id=first["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        second, _ = self.store.submit(presentation["presentation_id"],
-                                    values(next_action="Correction"))
+        presentation = self.store.present(
+            supersedes_response_id=first["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
+        second, _ = self.store.submit(
+            presentation["presentation_id"], values(next_action="Correction")
+        )
         exported = self.store.export()
-        self.assertEqual(set(exported), {"export_schema_version", "exported_at",
-            "application", "synthetic_only", "response_count", "responses",
-            "case_versions", "case_reviews", "case_families", "collection_protocols", "assignments"})
+        self.assertEqual(
+            set(exported),
+            {
+                "export_schema_version",
+                "exported_at",
+                "application",
+                "synthetic_only",
+                "response_count",
+                "responses",
+                "case_versions",
+                "case_reviews",
+                "case_families",
+                "collection_protocols",
+                "assignments",
+            },
+        )
         self.assertEqual(exported["export_schema_version"], "1.2")
         self.assertEqual(exported["application"], "Twin Lab v0.1")
         self.assertIs(exported["synthetic_only"], True)

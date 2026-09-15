@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from helpers import latest_version, values
+
 from twin_lab.schemas import ValidationError, snapshot_hash
 from twin_lab.store import Conflict, NotFound, Store
 
@@ -23,10 +24,13 @@ class CatalogTests(unittest.TestCase):
 
     def review_body(self, **changes):
         body = {
-            "request_id": str(uuid4()), "version_id": self.version["version_id"],
-            "reviewer_code": "TEST_REVIEWER", "reviewed_on": date.today().isoformat(),
+            "request_id": str(uuid4()),
+            "version_id": self.version["version_id"],
+            "reviewer_code": "TEST_REVIEWER",
+            "reviewed_on": date.today().isoformat(),
             "comments": "Synthetic software test only; no clinical approval.",
-            "disposition": "approved", "supersedes_review_id": None,
+            "disposition": "approved",
+            "supersedes_review_id": None,
         }
         body.update(changes)
         return body
@@ -36,9 +40,12 @@ class CatalogTests(unittest.TestCase):
         snapshot["version"] = "test-revision-2"
         snapshot["narrative"] += " Synthetic wording revision for a software test."
         body = {
-            "request_id": str(uuid4()), "based_on_version_id": self.version["version_id"],
-            "version": snapshot["version"], "editor_code": "TEST_EDITOR",
-            "change_note": "Software test wording change.", "snapshot": snapshot,
+            "request_id": str(uuid4()),
+            "based_on_version_id": self.version["version_id"],
+            "version": snapshot["version"],
+            "editor_code": "TEST_EDITOR",
+            "change_note": "Software test wording change.",
+            "snapshot": snapshot,
         }
         body.update(changes)
         return body
@@ -68,10 +75,16 @@ class CatalogTests(unittest.TestCase):
                 self.assertEqual(base["family_id"], variant["family_id"])
                 self.assertEqual(base["care_setting"], variant["care_setting"])
                 self.assertEqual(base["narrative"], variant["narrative"])
-                self.assertEqual(len(base["decision_time_facts"]), len(variant["decision_time_facts"]))
-                changed = [(left, right) for left, right in
-                           zip(base["decision_time_facts"], variant["decision_time_facts"])
-                           if left != right]
+                self.assertEqual(
+                    len(base["decision_time_facts"]), len(variant["decision_time_facts"])
+                )
+                changed = [
+                    (left, right)
+                    for left, right in zip(
+                        base["decision_time_facts"], variant["decision_time_facts"]
+                    )
+                    if left != right
+                ]
                 self.assertEqual(len(changed), 1)
                 self.assertEqual(changed[0][0]["label"], changed[0][1]["label"])
                 self.assertTrue(family["held_constant"])
@@ -98,7 +111,9 @@ class CatalogTests(unittest.TestCase):
         first, _ = self.store.catalog.add_review(self.review_body())
         with self.assertRaises(Conflict):
             self.store.catalog.add_review(self.review_body(disposition="rejected"))
-        left = self.review_body(supersedes_review_id=first["review_id"], disposition="needs_revision")
+        left = self.review_body(
+            supersedes_review_id=first["review_id"], disposition="needs_revision"
+        )
         right = self.review_body(supersedes_review_id=first["review_id"], disposition="rejected")
 
         def attempt(body):
@@ -117,9 +132,11 @@ class CatalogTests(unittest.TestCase):
 
     def test_review_rejects_unknown_fields_dates_and_missing_versions(self):
         invalid = (
-            {"study_collection_enabled": True}, {"reviewer_code": "name@example.test"},
+            {"study_collection_enabled": True},
+            {"reviewer_code": "name@example.test"},
             {"reviewed_on": (date.today() + timedelta(days=2)).isoformat()},
-            {"reviewed_on": "2026-02-30"}, {"disposition": "study_ready"},
+            {"reviewed_on": "2026-02-30"},
+            {"disposition": "study_ready"},
         )
         for changes in invalid:
             with self.subTest(changes=changes), self.assertRaises(ValidationError):
@@ -152,8 +169,11 @@ class CatalogTests(unittest.TestCase):
             restarted.catalog.add_version(self.revision_body())
 
     def test_revision_cannot_change_case_identity_family_or_add_hidden_facts(self):
-        for field, value in (("case_id", str(uuid4())), ("family_id", str(uuid4())),
-                             ("answer_key", "Not allowed")):
+        for field, value in (
+            ("case_id", str(uuid4())),
+            ("family_id", str(uuid4())),
+            ("answer_key", "Not allowed"),
+        ):
             body = self.revision_body()
             body["snapshot"][field] = value
             with self.subTest(field=field), self.assertRaises(ValidationError):
@@ -162,9 +182,16 @@ class CatalogTests(unittest.TestCase):
 
     def test_response_pins_review_and_version_at_presentation_and_correction(self):
         approved, _ = self.store.catalog.add_review(self.review_body())
-        presentation = self.store.present(version_id=self.version["version_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        self.store.catalog.add_review(self.review_body(disposition="needs_revision",
-            supersedes_review_id=approved["review_id"]))
+        presentation = self.store.present(
+            version_id=self.version["version_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
+        self.store.catalog.add_review(
+            self.review_body(
+                disposition="needs_revision", supersedes_review_id=approved["review_id"]
+            )
+        )
         self.store.catalog.add_version(self.revision_body())
         response, _ = self.store.submit(presentation["presentation_id"], values())
         self.assertEqual(response["case_version_id"], self.version["version_id"])
@@ -173,8 +200,14 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(response["case_snapshot"], presentation["case_snapshot"])
         self.assertEqual(response["case_version"], self.version["case_version"])
         self.assertIs(response["eligible_for_study"], False)
-        correction = self.store.present(supersedes_response_id=response["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        corrected, _ = self.store.submit(correction["presentation_id"], values(next_action="Correction"))
+        correction = self.store.present(
+            supersedes_response_id=response["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
+        corrected, _ = self.store.submit(
+            correction["presentation_id"], values(next_action="Correction")
+        )
         for field in ("case_version_id", "case_review_id", "case_snapshot", "snapshot_sha256"):
             self.assertEqual(corrected[field], response[field])
         self.assertEqual(self.store.responses(), [response, corrected])

@@ -4,10 +4,77 @@ The [governance/lifecycle contract](milestone-3.md) defines the current addition
 New presentations require explicit capture mode, permission reference and QA
 acknowledgment. New responses add governance/permission references under schema
 1.2; existing saved payloads retain their original schema and values. SQLite
-versions 1/2 migrate to 3. General managed export is 1.2, excludes restricted
+versions 1/2/3 migrate to 4. General managed export is 1.2, excludes restricted
 response chains and private governance/permission documents, and adds its copy
 manifest. The sections below retain the earlier contracts as historical context;
 where they differ, milestone 3 governs current behavior.
+
+## Current version 2 governance and plan contracts
+
+The version markers below select strict input contracts. An omitted marker
+selects the original version 1 request; an explicit `"1.0"` or unknown marker is
+not a legacy request and is rejected. Unknown keys remain errors. Stored
+records always include their own schema version. No historical JSON payload or
+request body is rewritten, and no missing field is inferred from notes.
+
+`POST /api/governance` version 2 retains the version 1 fields from
+`governance_schema.py` and adds:
+
+- `governance_schema_version: "2.0"`;
+- `operator.professional_role` and `operator.pilot_start_date` alongside existing
+  operator identity/contacts and `pilot_close_date`;
+- `session: {description, max_distinct_case_versions}`; the limit is an integer
+  1–200, or null for an incomplete draft;
+- `retention.calendar_year_basis`, either null or
+  `{pilot_close_date, anniversary_date}` using exact YYYY-MM-DD dates.
+
+Dates may be empty in drafts. Filled start/close dates require start <= close.
+The window includes 00:00 UTC on start and excludes 00:00 UTC after close.
+Approval may precede the start but capture cannot. For approval, the basis must
+match the close date and the following year's same month/day; February 29 permits
+an explicitly chosen February 28 or March 1. Both `permission_after_close_days`
+and `audit_after_close_days` must equal that interval. A close in year 9999 is
+invalid because it has no supported following anniversary. Other draft values
+may remain incomplete without granting authorization.
+
+Every new approved version 2 revision requires a notice version unused by any
+previously approved revision, because its new Governance ID defines a new
+distinct-version allowance. Exact historical retries return the saved record
+without changing the current revision. New version 1 governance writes are
+rejected after version 2 cutover.
+
+`POST /api/protocols` version 2 accepts exactly `protocol_schema_version: "2.0"`,
+`request_id`, `based_on_protocol_id`, `title`, `owner_code`, `physician_codes`,
+`governance_id`, `backup_owner_code`, `backup_frequency`, and `notes`. The pin
+must reference an existing Governance revision. There are no version 1 consent
+or retention fields in this contract. Stored records retain the common protocol
+metadata described below. New version 1 writes are rejected once a version 2
+plan is current, including attempts naming the current parent; identical
+historical retries still return the original without making it current.
+
+A draft governance pin is valid for planning. Human capture under a version 2
+plan requires that pin to equal current approved governance. Current version 2
+governance requires a linked version 2 plan; an unlinked legacy plan cannot
+bypass its scope. Legacy governance may be explicitly linked, without inventing
+start/session fields or a case-set limit. Permission recording, presentation and
+response save/retry recheck current authorization. Version 2 permission retries
+also recheck current governance, plan link, time window and withdrawal. Historical
+receipt downloads remain available.
+
+Version 2 permission receipts use `permission_schema_version: "2.0"` and retain
+the existing exact notice/hash/code/choice/timestamp fields plus `session`,
+`professional_role`, and `pilot_window: {pilot_start_date, pilot_close_date}`.
+These private documents and new free text remain excluded from general export.
+Response and general export schemas remain `1.2`; exported version 2 protocols
+include only their planning fields and Governance pin.
+
+Assignment allowance counts distinct `version_id` values for a physician code
+across all protocols pinned to the same Governance ID. Rejected assignments
+append nothing. Reassignment of an existing version under a new current plan,
+repeat responses and linked corrections consume no additional distinct-version
+slot. A new Governance scope requires a new notice version and permission.
+Historical assignments and corrections retain their original references and
+remain subject to current authorization; they are not automatically rebound.
 
 All JSON is UTF-8. Unknown keys are rejected at input boundaries. Response and
 presentation IDs are UUIDs; timestamps are server-generated ISO 8601 UTC strings.
@@ -135,7 +202,7 @@ comments describe the reviewer's recorded judgment; they do not verify identity
 or grant study eligibility. A later review never changes a response's pinned
 review ID, review status, case snapshot, or content hash.
 
-## Versioned collection rules and assignments
+## Collection overview, historical version 1 rules and assignments
 
 `GET /api/collection` returns `{current, history, assignments, readiness,
 backups}`. `current` is the latest saved protocol or null; `history` retains all
@@ -145,8 +212,12 @@ saved versions in order. `readiness` includes `missing_fields`,
 fields, at least one current-protocol assignment, and an approved local review
 for every assigned version in that protocol.
 This check describes draft completeness, never study authorization.
+`governance_pin_current` is null for a legacy plan under legacy governance,
+false for an outdated/missing required link, or true for a current version 2 pin.
+Linked-plan missing fields also describe missing requirements of pinned
+Governance. A true pin alone does not mean approval or permission.
 
-`POST /api/protocols` accepts exactly `request_id`, `based_on_protocol_id`,
+The legacy `POST /api/protocols` request accepts exactly `request_id`, `based_on_protocol_id`,
 `title`, `owner_code`, `physician_codes`, `consent_statement`, `consent_version`,
 `retention_days`, `backup_owner_code`, `backup_frequency`,
 `backup_retention_days`, and `notes`; returns `{protocol, duplicate}`. The first
@@ -194,9 +265,12 @@ when request IDs differ. Commits occur before success responses. Concurrent
 requests cannot fork a revision chain. Unknown input keys remain rejected,
 including forged study-purpose or study-enable fields.
 
-SQLite database `user_version` 1 migrates to 2 in place while preserving the
-original response and presentation JSON payloads. Initialization is repeatable;
-unsupported database versions are rejected. Appended records and database
+SQLite database `user_version` 1 originally migrated to 2, then 3. The current
+coordinator supports empty/1/2/3/4 databases and advances to 4 without rewriting
+historical payload/request bytes. Initialization is repeatable; unsupported
+versions are rejected before writes. All DDL and fixture seeding share an
+explicit SQLite transaction; the external journals have separate durable
+boundaries. Appended records and database
 triggers protect history through the application; direct filesystem access
 still permits tampering, and SHA-256 hashes are not a signature or trust anchor.
 

@@ -1,36 +1,40 @@
 """Single-user loopback HTTP adapter. Not a production web server."""
 
 import argparse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import logging
 import os
-from pathlib import Path
 import sqlite3
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlsplit
 
+from .governance import DOCUMENT_FILES, DOCUMENTS
 from .schemas import ValidationError, canonical_json, exact_keys, read_json, validate_id
-from .governance import DOCUMENTS, DOCUMENT_FILES
 from .store import Conflict, NotFound, Store
 
 STATIC = Path(__file__).resolve().parent / "static"
-ASSETS = {"/": ("index.html", "text/html; charset=utf-8"),
-          "/app.js": ("app.js", "text/javascript; charset=utf-8"),
-          "/theme.js": ("theme.js", "text/javascript; charset=utf-8"),
-          "/snapshot.js": ("snapshot.js", "text/javascript; charset=utf-8"),
-          "/review.js": ("review.js", "text/javascript; charset=utf-8"),
-          "/api.js": ("api.js", "text/javascript; charset=utf-8"),
-          "/lab.js": ("lab.js", "text/javascript; charset=utf-8"),
-          "/collection.js": ("collection.js", "text/javascript; charset=utf-8"),
-          "/planning-ui.js": ("planning-ui.js", "text/javascript; charset=utf-8"),
-          "/governance.js": ("governance.js", "text/javascript; charset=utf-8"),
-          "/governance-form.js": ("governance-form.js", "text/javascript; charset=utf-8"),
-          "/capture-mode.js": ("capture-mode.js", "text/javascript; charset=utf-8"),
-          "/lifecycle.js": ("lifecycle.js", "text/javascript; charset=utf-8"),
-          "/planning.css": ("planning.css", "text/css; charset=utf-8"),
-          "/styles.css": ("styles.css", "text/css; charset=utf-8")}
+ASSETS = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "/theme.js": ("theme.js", "text/javascript; charset=utf-8"),
+    "/snapshot.js": ("snapshot.js", "text/javascript; charset=utf-8"),
+    "/review.js": ("review.js", "text/javascript; charset=utf-8"),
+    "/api.js": ("api.js", "text/javascript; charset=utf-8"),
+    "/lab.js": ("lab.js", "text/javascript; charset=utf-8"),
+    "/collection.js": ("collection.js", "text/javascript; charset=utf-8"),
+    "/planning-ui.js": ("planning-ui.js", "text/javascript; charset=utf-8"),
+    "/governance.js": ("governance.js", "text/javascript; charset=utf-8"),
+    "/governance-form.js": ("governance-form.js", "text/javascript; charset=utf-8"),
+    "/capture-mode.js": ("capture-mode.js", "text/javascript; charset=utf-8"),
+    "/lifecycle.js": ("lifecycle.js", "text/javascript; charset=utf-8"),
+    "/planning.css": ("planning.css", "text/css; charset=utf-8"),
+    "/styles.css": ("styles.css", "text/css; charset=utf-8"),
+}
 MAX_BODY = 131072
-CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
-       "img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+CSP = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
+    "img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
 
 
 class RequestError(Exception):
@@ -38,7 +42,13 @@ class RequestError(Exception):
         self.status, self.message = status, message
 
 
+class TwinServer(ThreadingHTTPServer):
+    store: Store
+    server_address: tuple[str, int]
+
+
 class Handler(BaseHTTPRequestHandler):
+    server: TwinServer
     server_version = "TwinLab/0.1"
     sys_version = ""
 
@@ -122,14 +132,18 @@ class Handler(BaseHTTPRequestHandler):
                     if kind not in DOCUMENT_FILES:
                         raise NotFound("Governance document not found.")
                     filename, content_type = DOCUMENT_FILES[kind]
-                    self.reply(200, (DOCUMENTS / filename).read_bytes(), content_type,
-                               filename=filename)
+                    self.reply(
+                        200, (DOCUMENTS / filename).read_bytes(), content_type, filename=filename
+                    )
                 elif path == "/api/lifecycle":
                     self.reply(200, store.lifecycle.overview())
                 elif path.startswith("/api/permissions/"):
                     receipt_id = validate_id(path.removeprefix("/api/permissions/"))
-                    self.reply(200, store.governance.receipt(receipt_id),
-                               filename=f"twin-lab-permission-{receipt_id}.json")
+                    self.reply(
+                        200,
+                        store.governance.receipt(receipt_id),
+                        filename=f"twin-lab-permission-{receipt_id}.json",
+                    )
                 elif path == "/api/export":
                     exported, manifest = store.lifecycle.managed_export(store.export())
                     self.reply(200, exported, filename=manifest["filename"])
@@ -139,17 +153,26 @@ class Handler(BaseHTTPRequestHandler):
                 body = self.request_body()
                 if path == "/api/presentations":
                     selectors = ("case_id", "version_id", "assignment_id", "supersedes_response_id")
-                    selected = set(body).intersection(selectors) if isinstance(body, dict) else set()
+                    selected = (
+                        set(body).intersection(selectors) if isinstance(body, dict) else set()
+                    )
                     if len(selected) != 1:
                         raise ValidationError("Choose exactly one presentation selector.")
                     if set(body) == selected:
-                        raise ValidationError("Capture now requires an explicit mode. Keep any unsaved answers, then reload Twin Lab and reopen the case.")
-                    exact_keys(body, selected | {"capture_mode", "permission_receipt_id", "qa_acknowledged"})
+                        raise ValidationError(
+                            "Capture now requires an explicit mode. Keep any unsaved answers, then reload Twin Lab and reopen the case."
+                        )
+                    exact_keys(
+                        body,
+                        selected | {"capture_mode", "permission_receipt_id", "qa_acknowledged"},
+                    )
                     self.reply(201, store.present(**body))
                 elif path == "/api/responses":
                     exact_keys(body, {"presentation_id", "values"})
                     response, duplicate = store.submit(body["presentation_id"], body["values"])
-                    self.reply(200 if duplicate else 201, {"response": response, "duplicate": duplicate})
+                    self.reply(
+                        200 if duplicate else 201, {"response": response, "duplicate": duplicate}
+                    )
                 else:
                     mutations = {
                         "/api/case-reviews": (store.catalog.add_review, "review"),
@@ -160,7 +183,10 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/governance": (store.governance.save, "governance"),
                         "/api/permissions": (store.governance.permission, "receipt"),
                         "/api/withdrawals": (store.lifecycle.withdraw, "withdrawal"),
-                        "/api/withdrawal-verifications": (store.lifecycle.verify_withdrawal, "verification"),
+                        "/api/withdrawal-verifications": (
+                            store.lifecycle.verify_withdrawal,
+                            "verification",
+                        ),
                         "/api/holds": (store.lifecycle.hold, "hold"),
                         "/api/hold-releases": (store.lifecycle.release_hold, "release"),
                     }
@@ -181,7 +207,12 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(404, {"error": str(exc)})
         except (sqlite3.Error, OSError, RuntimeError):
             logging.error("Local storage/request operation failed; no response content logged.")
-            self.reply(500, {"error": "Local storage is unavailable. Save was not confirmed. Keep this form open and retry; check the data directory permissions and disk space."})
+            self.reply(
+                500,
+                {
+                    "error": "Local storage is unavailable. Save was not confirmed. Keep this form open and retry; check the data directory permissions and disk space."
+                },
+            )
 
     do_GET = dispatch
     do_POST = dispatch
@@ -189,7 +220,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def make_server(store, host="127.0.0.1", port=0):
-    server = ThreadingHTTPServer((host, port), Handler)
+    server = TwinServer((host, port), Handler)
     server.store = store
     return server
 
@@ -197,10 +228,14 @@ def make_server(store, host="127.0.0.1", port=0):
 def main():
     parser = argparse.ArgumentParser(description="Twin Lab synthetic prototype (local only)")
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--container-bind", action="store_true",
-                        help="Listen inside Docker; publish the port on host loopback only.")
-    parser.add_argument("--data-dir", type=Path,
-                        default=Path.home() / ".local" / "share" / "twin-lab")
+    parser.add_argument(
+        "--container-bind",
+        action="store_true",
+        help="Listen inside Docker; publish the port on host loopback only.",
+    )
+    parser.add_argument(
+        "--data-dir", type=Path, default=Path.home() / ".local" / "share" / "twin-lab"
+    )
     args = parser.parse_args()
     os.umask(0o077)
     store = Store(args.data_dir / "twin-lab.sqlite3")

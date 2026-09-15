@@ -1,0 +1,10 @@
+{
+  "name": "twin-lab-quality-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Approved test-only dependencies; no application packages",
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "typescript": "7.0.2"
+  }
+}

@@ -34,3 +34,10 @@ __pycache__/
 .venv/
 .gstack/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+quality-output/
+test-results/
+playwright-report/
+*.tsbuildinfo

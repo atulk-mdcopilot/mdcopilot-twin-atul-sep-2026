@@ -67,6 +67,12 @@ export function initGovernance(container, onChange) {
     if (governance.current) {
       const notice = node("article", undefined, "panel planning-card");
       notice.append(node("h2", `Current policy: ${governance.current.title}`), node("p", `${governance.current.status} · ${governance.current.created_at}`, "small muted"));
+      const policy = governance.current;
+      notice.append(node("h3", "Pilot and participant session"));
+      notice.append(node("p", `Professional role: ${policy.operator.professional_role || "Unknown — not recorded in this version"}`));
+      notice.append(node("p", `UTC pilot dates: ${policy.operator.pilot_start_date || "Unknown start"} through ${policy.operator.pilot_close_date || "Unknown close"}. Start inclusive; closes at 00:00 UTC after the close date.`, "small muted"));
+      notice.append(node("p", policy.session?.description || "Session description: unknown — not recorded in this version."));
+      notice.append(node("p", `Maximum distinct assigned case versions per physician: ${policy.session?.max_distinct_case_versions ?? "Unknown"}. This is not a total-response or time limit.`, "small muted"));
       notice.append(node("h3", `Exact permission notice · ${governance.current.permission.version || "No version recorded"}`));
       notice.append(node("div", governance.current.permission.text || "No notice text has been recorded.", "exact-notice"));
       notice.append(node("p", `SHA-256 ${governance.current.permission_sha256}`, "identifier"));

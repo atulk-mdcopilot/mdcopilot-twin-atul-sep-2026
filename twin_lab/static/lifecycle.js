@@ -27,7 +27,7 @@ export function renderLifecycle(data, editors, onSaved, onReload) {
   field(holds.fields, "authority_record", "Authority and documented reason", "textarea", "", {required: true, maxLength: 1000, help: "Use a minimal authority reference. Do not copy response text or patient information."});
   editors.push(wireMutation(holds, "/api/holds", () => {
     const values = Object.fromEntries(new FormData(holds.form));
-    const response_ids = values.response_ids.split(/[\s,]+/).filter(Boolean);
+    const response_ids = String(values.response_ids).split(/[\s,]+/).filter(Boolean);
     if (!response_ids.length || new Set(response_ids).size !== response_ids.length) throw new Error("Enter each affected response ID once.");
     return {...values, response_ids};
   }, onSaved, onReload));

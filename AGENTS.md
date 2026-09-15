@@ -13,8 +13,10 @@ families, and collection-planning extension after the first milestone.
 - Never add AI advice, answer keys, diagnosis probabilities, training, analytics,
   patient records, cloud services, EHR connections, or public deployment.
 - Do not import the separate MDcopilot application's runtime or credentials.
-- Use the Python standard library, SQLite, and local HTML/CSS/JavaScript. Ask
-  before adding third-party dependencies. Pin the container runtime by digest.
+- Use the Python standard library, SQLite, and local HTML/CSS/JavaScript at runtime.
+  The user approved Ruff, mypy, Playwright Test and TypeScript for the isolated
+  test environment on September 12, 2026. Ask before adding other dependencies.
+  Pin packages and container images; downloads occur during explicit setup only.
 - Run application code and tests in Docker. Bind the published port to loopback.
 
 ## Data and implementation
@@ -38,13 +40,41 @@ families, and collection-planning extension after the first milestone.
 
 ## Verification and handoff
 
-- Run `docker compose run --rm twin-lab python -m unittest discover -s tests -v`.
+- Use `sh tests/quality/run.sh --fast` for focused work and `--full` before handoff.
+  Run tests with the standalone test Compose configuration, never the application
+  configuration that mounts actual data. Missing or unrun required checks fail.
+- Keep all test databases, browser downloads, traces and reports in disposable
+  storage or the dedicated quality output directory outside the checkout.
+  Never mount actual response storage, home directories, browser profiles or the
+  Docker socket into a test container. Test execution has no external network.
 - Exercise case display, validation, save/retry, restart, correction, local review,
   and JSON export. Test that runtime data and credentials are Git-ignored.
 - Report actual test results and any unrun checks. All screens must retain the
   synthetic prototype / unreviewed / not validated clinical tool notice.
 - Work on the user-requested local feature branch. Do not commit, push, publish,
   deploy, or change repository visibility unless explicitly requested.
+
+Apply these seven quality rules to each reviewable change:
+
+1. Reproduce defects before fixing them; record failing and passing evidence.
+2. Run syntax, lint, format and the documented type-check scope. Extend that
+   scope for changed modules; explain narrow exceptions rather than hiding errors.
+3. Check action sequences for immutable originals, explicit permission,
+   idempotent saves, fixed retention anchors and effective restrictions.
+4. Exercise meaningful failure/recovery boundaries using fabricated temporary
+   data. Never kill the actual application or dispose of actual records in tests.
+5. Compare exact historical payload/request bytes, identifiers, timestamps,
+   hashes and links across contract changes and repeated startup.
+6. Obtain engineering review from a reviewer other than the implementer.
+   Automated review is not a clinical review or an operational attestation.
+7. Finish with passing acceptance checks, actual test evidence, updated docs,
+   ignored private artifacts, resolved review findings and explicit limitations.
+
+Keep formatting, persistence cleanup and policy changes separately reviewable.
+Do not use test counts or an arbitrary coverage target as substitutes for behavior.
+The approved source checkpoint is local only; authorization does not permit push
+or deployment. A schema upgrade must first be rehearsed in disposable storage;
+never run an incompatible older binary against a newer database.
 
 Local case review, matched families, and draft collection rules are in scope.
 Versioned governance, participant permission, gated local human demo capture,

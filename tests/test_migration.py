@@ -11,6 +11,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from helpers import FIXTURES, latest_version, values
+
 from twin_lab.catalog import Catalog
 from twin_lab.schemas import snapshot_hash
 from twin_lab.store import Store
@@ -23,24 +24,34 @@ class MigrationTests(unittest.TestCase):
         self.path = Path(self.temp.name) / "legacy.sqlite3"
         snapshot = json.loads(FIXTURES.read_text(encoding="utf-8"))[0]
         self.presentation = {
-            "presentation_id": str(uuid4()), "presented_at": "2026-09-08T12:00:00.000000+00:00",
-            "case_snapshot": snapshot, "snapshot_sha256": snapshot_hash(snapshot),
+            "presentation_id": str(uuid4()),
+            "presented_at": "2026-09-08T12:00:00.000000+00:00",
+            "case_snapshot": snapshot,
+            "snapshot_sha256": snapshot_hash(snapshot),
             "supersedes_response_id": None,
         }
         original = values(rationale=" Legacy Unicode: café.\n")
         self.response = {
-            "response_id": str(uuid4()), "presentation_id": self.presentation["presentation_id"],
-            "physician_code": "DEMO_01", "case_id": snapshot["case_id"],
-            "case_family": snapshot["family_id"], "case_version": snapshot["version"],
-            "response_schema_version": "1.0", "case_snapshot": snapshot,
+            "response_id": str(uuid4()),
+            "presentation_id": self.presentation["presentation_id"],
+            "physician_code": "DEMO_01",
+            "case_id": snapshot["case_id"],
+            "case_family": snapshot["family_id"],
+            "case_version": snapshot["version"],
+            "response_schema_version": "1.0",
+            "case_snapshot": snapshot,
             "snapshot_sha256": self.presentation["snapshot_sha256"],
             "presented_at": self.presentation["presented_at"],
             "submitted_at": "2026-09-08T12:01:00.000000+00:00",
             "original_values": original,
-            "normalized_values": {key: value.strip() if isinstance(value, str) else value
-                                  for key, value in original.items()},
-            "ai_advice_shown": False, "collection_purpose": "demo",
-            "case_review_status": "unreviewed", "eligible_for_study": False,
+            "normalized_values": {
+                key: value.strip() if isinstance(value, str) else value
+                for key, value in original.items()
+            },
+            "ai_advice_shown": False,
+            "collection_purpose": "demo",
+            "case_review_status": "unreviewed",
+            "eligible_for_study": False,
             "supersedes_response_id": None,
         }
         self.presentation_text = json.dumps(self.presentation, ensure_ascii=False, indent=2)
@@ -56,19 +67,32 @@ class MigrationTests(unittest.TestCase):
                 );
                 PRAGMA user_version = 1;
             """)
-            db.execute("INSERT INTO presentations VALUES (?, ?)",
-                       (self.presentation["presentation_id"], self.presentation_text))
-            db.execute("INSERT INTO responses VALUES (?, ?, ?, ?)",
-                       (self.response["response_id"], self.presentation["presentation_id"],
-                        None, self.response_text))
+            db.execute(
+                "INSERT INTO presentations VALUES (?, ?)",
+                (self.presentation["presentation_id"], self.presentation_text),
+            )
+            db.execute(
+                "INSERT INTO responses VALUES (?, ?, ?, ?)",
+                (
+                    self.response["response_id"],
+                    self.presentation["presentation_id"],
+                    None,
+                    self.response_text,
+                ),
+            )
 
     def test_v1_upgrade_retains_exact_payload_bytes_and_exports_original_schema(self):
         store = Store(self.path)
         self.assertEqual(store.responses(), [self.response])
         with sqlite3.connect(self.path) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 3)
-            self.assertEqual(db.execute("SELECT payload FROM responses").fetchone()[0], self.response_text)
-            self.assertEqual(db.execute("SELECT payload FROM presentations").fetchone()[0], self.presentation_text)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 4)
+            self.assertEqual(
+                db.execute("SELECT payload FROM responses").fetchone()[0], self.response_text
+            )
+            self.assertEqual(
+                db.execute("SELECT payload FROM presentations").fetchone()[0],
+                self.presentation_text,
+            )
             self.assertEqual(db.execute("PRAGMA integrity_check").fetchone()[0], "ok")
         exported = store.export()
         self.assertEqual(exported["export_schema_version"], "1.2")
@@ -86,8 +110,12 @@ class MigrationTests(unittest.TestCase):
     def test_correction_of_legacy_response_preserves_original_and_exact_snapshot(self):
         original = copy.deepcopy(self.response)
         store = Store(self.path)
-        presentation = store.present(supersedes_response_id=original["response_id"], capture_mode="legacy_unclassified")
-        correction, duplicate = store.submit(presentation["presentation_id"], values(next_action="Legacy correction"))
+        presentation = store.present(
+            supersedes_response_id=original["response_id"], capture_mode="legacy_unclassified"
+        )
+        correction, duplicate = store.submit(
+            presentation["presentation_id"], values(next_action="Legacy correction")
+        )
         self.assertFalse(duplicate)
         self.assertEqual(correction["case_snapshot"], original["case_snapshot"])
         self.assertEqual(correction["snapshot_sha256"], original["snapshot_sha256"])
@@ -97,13 +125,21 @@ class MigrationTests(unittest.TestCase):
         self.assertIsNone(correction["permission_receipt_id"])
         self.assertEqual(store.responses(), [original, correction])
         with sqlite3.connect(self.path) as db:
-            self.assertEqual(db.execute("SELECT payload FROM responses WHERE id=?",
-                (original["response_id"],)).fetchone()[0], self.response_text)
+            self.assertEqual(
+                db.execute(
+                    "SELECT payload FROM responses WHERE id=?", (original["response_id"],)
+                ).fetchone()[0],
+                self.response_text,
+            )
 
     def test_migrated_observations_remain_append_only(self):
         Store(self.path)
-        for operation in ("UPDATE responses SET payload='{}'", "DELETE FROM responses",
-                          "UPDATE presentations SET payload='{}'", "DELETE FROM presentations"):
+        for operation in (
+            "UPDATE responses SET payload='{}'",
+            "DELETE FROM responses",
+            "UPDATE presentations SET payload='{}'",
+            "DELETE FROM presentations",
+        ):
             with self.subTest(operation=operation):
                 with sqlite3.connect(self.path) as db, self.assertRaises(sqlite3.DatabaseError):
                     db.execute(operation)
@@ -116,7 +152,9 @@ class MigrationTests(unittest.TestCase):
             Store(self.path)
         with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 99)
-            self.assertEqual(db.execute("SELECT payload FROM responses").fetchone()[0], self.response_text)
+            self.assertEqual(
+                db.execute("SELECT payload FROM responses").fetchone()[0], self.response_text
+            )
 
 
 class WordingMigrationTests(unittest.TestCase):
@@ -130,38 +168,71 @@ class WordingMigrationTests(unittest.TestCase):
         self.assertEqual(len(self.original_catalog["versions"]), 10)
 
     def payload_rows(self):
-        tables = ("presentations", "responses", "case_versions", "case_reviews",
-                  "case_families", "collection_protocols", "case_assignments")
+        tables = (
+            "presentations",
+            "responses",
+            "case_versions",
+            "case_reviews",
+            "case_families",
+            "collection_protocols",
+            "case_assignments",
+        )
         with sqlite3.connect(self.path) as db:
-            return {table: db.execute(f"SELECT * FROM {table} ORDER BY rowid").fetchall()
-                    for table in tables}
+            return {
+                table: db.execute(f"SELECT * FROM {table} ORDER BY rowid").fetchall()
+                for table in tables
+            }
 
     def test_wording_upgrade_preserves_observations_reviews_assignments_and_pinned_families(self):
         original = self.original_catalog["versions"][0]
-        review, _ = self.store.catalog.add_review({
-            "request_id": str(uuid4()), "version_id": original["version_id"],
-            "reviewer_code": "TEST_REVIEWER", "reviewed_on": datetime.now(timezone.utc).date().isoformat(),
-            "comments": "Software test only.", "disposition": "approved", "supersedes_review_id": None,
-        })
-        protocol, _ = self.store.collection.save_protocol({
-            "request_id": str(uuid4()), "based_on_protocol_id": None,
-            "title": "Synthetic migration test", "owner_code": "", "physician_codes": ["DEMO_01"],
-            "consent_statement": "", "consent_version": "", "retention_days": None,
-            "backup_owner_code": "", "backup_frequency": "manual_before_changes",
-            "backup_retention_days": None, "notes": "Temporary software test only.",
-        })
-        assignment, _ = self.store.collection.assign({
-            "request_id": str(uuid4()), "protocol_id": protocol["protocol_id"],
-            "physician_code": "DEMO_01", "version_id": original["version_id"], "notes": "",
-        })
-        presentation = self.store.present(assignment_id=assignment["assignment_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        review, _ = self.store.catalog.add_review(
+            {
+                "request_id": str(uuid4()),
+                "version_id": original["version_id"],
+                "reviewer_code": "TEST_REVIEWER",
+                "reviewed_on": datetime.now(timezone.utc).date().isoformat(),
+                "comments": "Software test only.",
+                "disposition": "approved",
+                "supersedes_review_id": None,
+            }
+        )
+        protocol, _ = self.store.collection.save_protocol(
+            {
+                "request_id": str(uuid4()),
+                "based_on_protocol_id": None,
+                "title": "Synthetic migration test",
+                "owner_code": "",
+                "physician_codes": ["DEMO_01"],
+                "consent_statement": "",
+                "consent_version": "",
+                "retention_days": None,
+                "backup_owner_code": "",
+                "backup_frequency": "manual_before_changes",
+                "backup_retention_days": None,
+                "notes": "Temporary software test only.",
+            }
+        )
+        assignment, _ = self.store.collection.assign(
+            {
+                "request_id": str(uuid4()),
+                "protocol_id": protocol["protocol_id"],
+                "physician_code": "DEMO_01",
+                "version_id": original["version_id"],
+                "notes": "",
+            }
+        )
+        presentation = self.store.present(
+            assignment_id=assignment["assignment_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         response, _ = self.store.submit(presentation["presentation_id"], values())
         before = self.payload_rows()
         upgraded = Store(self.path)
         after = self.payload_rows()
         for table, rows in before.items():
             with self.subTest(table=table):
-                self.assertEqual(after[table][:len(rows)], rows)
+                self.assertEqual(after[table][: len(rows)], rows)
                 if table != "case_versions":
                     self.assertEqual(after[table], rows)
         catalog = upgraded.catalog.overview()
@@ -173,16 +244,34 @@ class WordingMigrationTests(unittest.TestCase):
         self.assertEqual(Store(self.path).catalog.overview(), catalog)
         self.assertEqual(self.payload_rows(), after)
 
-        latest = upgraded.present(case_id=original["case_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        latest = upgraded.present(
+            case_id=original["case_id"], capture_mode="fabricated_qa", qa_acknowledged=True
+        )
         self.assertEqual(latest["case_snapshot"]["version"], "1.1")
         self.assertEqual(latest["case_snapshot"]["review_status"], "unreviewed")
         self.assertIsNone(latest["case_review_id"])
-        pinned = upgraded.present(assignment_id=assignment["assignment_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
+        pinned = upgraded.present(
+            assignment_id=assignment["assignment_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
         self.assertEqual(pinned["case_snapshot"], presentation["case_snapshot"])
         self.assertEqual(pinned["case_review_id"], review["review_id"])
-        correction = upgraded.present(supersedes_response_id=response["response_id"], capture_mode="fabricated_qa", qa_acknowledged=True)
-        corrected, _ = upgraded.submit(correction["presentation_id"], values(next_action="Correction"))
-        for field in ("case_snapshot", "case_version_id", "case_review_id", "assignment_id", "protocol_id"):
+        correction = upgraded.present(
+            supersedes_response_id=response["response_id"],
+            capture_mode="fabricated_qa",
+            qa_acknowledged=True,
+        )
+        corrected, _ = upgraded.submit(
+            correction["presentation_id"], values(next_action="Correction")
+        )
+        for field in (
+            "case_snapshot",
+            "case_version_id",
+            "case_review_id",
+            "assignment_id",
+            "protocol_id",
+        ):
             self.assertEqual(corrected[field], response[field])
 
     def test_latest_cases_only_change_requested_wording_and_retain_matched_facts(self):
@@ -199,7 +288,9 @@ class WordingMigrationTests(unittest.TestCase):
                 self.assertEqual(latest["snapshot"], expected)
                 self.assertEqual(latest["based_on_version"], original["version_id"])
                 self.assertEqual(latest["snapshot_sha256"], snapshot_hash(expected))
-                self.assertEqual(latest["snapshot"]["provenance"], original["snapshot"]["provenance"])
+                self.assertEqual(
+                    latest["snapshot"]["provenance"], original["snapshot"]["provenance"]
+                )
                 self.assertNotIn("fictional", latest["snapshot"]["narrative"])
                 for fact in latest["snapshot"]["decision_time_facts"]:
                     self.assertNotIn("fictional", fact["value"])
@@ -210,9 +301,11 @@ class WordingMigrationTests(unittest.TestCase):
             base = latest_version(catalog, base_id)["snapshot"]
             variant = latest_version(catalog, variant_id)["snapshot"]
             self.assertEqual(base["narrative"], variant["narrative"])
-            changed = [(left, right) for left, right in
-                       zip(base["decision_time_facts"], variant["decision_time_facts"])
-                       if left != right]
+            changed = [
+                (left, right)
+                for left, right in zip(base["decision_time_facts"], variant["decision_time_facts"])
+                if left != right
+            ]
             self.assertEqual(len(changed), 1)
             self.assertEqual(changed[0][0]["label"], family["changed_fact"]["label"])
             self.assertEqual(changed[0][1]["label"], family["changed_fact"]["label"])
@@ -220,12 +313,19 @@ class WordingMigrationTests(unittest.TestCase):
     def test_existing_local_revision_is_never_replaced_by_source_wording_upgrade(self):
         original = self.original_catalog["versions"][0]
         snapshot = copy.deepcopy(original["snapshot"])
-        snapshot.update(version="1.1", narrative="Locally authored fictional scenario, retained verbatim.")
-        local, _ = self.store.catalog.add_version({
-            "request_id": str(uuid4()), "based_on_version_id": original["version_id"],
-            "version": snapshot["version"], "editor_code": "TEST_EDITOR",
-            "change_note": "Pre-existing local test revision.", "snapshot": snapshot,
-        })
+        snapshot.update(
+            version="1.1", narrative="Locally authored fictional scenario, retained verbatim."
+        )
+        local, _ = self.store.catalog.add_version(
+            {
+                "request_id": str(uuid4()),
+                "based_on_version_id": original["version_id"],
+                "version": snapshot["version"],
+                "editor_code": "TEST_EDITOR",
+                "change_note": "Pre-existing local test revision.",
+                "snapshot": snapshot,
+            }
+        )
         upgraded = Store(self.path)
         self.assertEqual(latest_version(upgraded.catalog.overview(), original["case_id"]), local)
         self.assertEqual(upgraded.cases()[0], snapshot)

@@ -1,5 +1,175 @@
 # Twin Lab verification
 
+## Quality plan implementation — September 12, 2026
+
+The user authorized the four proposed test-only tools and a local source
+checkpoint. Commit `55ef561` on `feat/twin-lab-v0-1` preserves the pre-quality
+application, fixtures, tests and documents. No runtime records were staged and
+nothing was pushed. The attached Downloads plan remains unchanged.
+
+Before implementation, the original **116 tests passed in 8.107 seconds** using
+the pinned Python image with `--network none`, read-only source and temporary
+storage. The 40 original Git-exclusion sentinels also passed. After the separate
+Ruff formatting/import cleanup, the same **116 tests passed in 8.164 seconds**.
+The mechanical patch is retained in the external quality output directory.
+
+Type checking is gradual: mypy checks every runtime module body; explicit
+annotations cover JSON serialization, time calculations and the HTTP server,
+with persistence annotations added during its extraction. JavaScript uses
+`checkJs`, `noEmit` and unused-variable checks over the explicit configuration.
+TypeScript's implicit-parameter strictness is not yet enabled; JSDoc grows at
+shared boundaries. No `type: ignore` or `ts-nocheck` suppressions are introduced.
+Syntax checking covers all executable Python and JavaScript source.
+
+Phase 1's two clean fast runs passed all 116 tests, configured static checks,
+47 exclusion sentinels and deliberately broken syntax/import/type/test/sentinel
+guards. Independent review found and resolved missing-stage detection in the
+gate. A subsequent concurrent source edit correctly made the gate fail; results
+are only passing when the source inventory and content remain stable throughout.
+
+Phase 2 established a real Chromium baseline: **14 passed, five failed in
+37.6 seconds**, all five failures in capture refresh. After the generation guard,
+selection preservation and invalidation messages, two fresh isolated runs passed
+**19 tests in 8.0 seconds** and **19 tests in 8.7 seconds**, with zero retries or
+skips. Tests cover exact values/snapshots/hashes, lost replies after real commit,
+pre-commit failures, protected drafts, permission and case-review invalidation,
+theme persistence and keyboard controls. Non-loopback browser request attempts
+and unexpected browser errors fail the suite. Independent review cleared the
+refresh change. The actual application and response storage were untouched.
+
+These engineering checks never attest to actual device controls, clinical case
+review or permission.
+
+Phase 3 first extracted shared persistence helpers without changing DDL or
+capture rules: **116 tests passed in 8.008 seconds**, and five historical
+compatibility tests passed in 0.149 seconds. Root engineering review checked
+constant table identifiers, parameterized values, exact retry bodies, catalog
+decoding and preserved domain error messages before schema setup changed.
+
+The coordinator then replaced separately committed constructor setup with one
+explicit SQLite transaction. Three setup-failure tests initially failed five
+subtest assertions; a concurrent-version regression also failed before the lock
+ordering fix. The final phase retained database version 3 and passed **116 tests
+in 7.957 seconds**, **nine compatibility tests in 0.182 seconds**, and **19 browser
+tests in 8.3 seconds**. Mypy checked all 18 runtime modules; lint/format passed.
+Independent review reran nine compatibility tests and all 14 interruption/I/O
+tests successfully. Original payload/request bytes, references, timestamps,
+hashes, frozen anchors and journal bytes were preserved. SQLite setup rolls back
+on failure; durable external journal files are intentionally a separate boundary.
+
+Phase 4's pilot contract began with nine unsupported-contract tests producing
+13 errors, then passed ten focused tests in 0.074 seconds and all 126 then-current
+top-level tests in 7.868 seconds. UTC boundaries, empty drafts, exact receipts,
+new notice versions and calendar-year/leap-day conversions are covered. Three
+new browser tests brought the suite to **22 passing in 10.1 seconds**.
+An independent reviewer verified that the baseline binary rejects a disposable
+version 4 database without changing its bytes.
+
+The separate linked-plan batch began with nine tests producing one failure and
+eight errors in 0.042 seconds. The final ten focused tests passed in 0.103 seconds;
+all **136 top-level tests passed in 8.028 seconds**, and nine compatibility tests
+passed in 0.272 seconds. Mixed version histories, downgrade attempts, stale pins,
+private export exclusions, assignment limits across plan revisions and explicit
+new-scope permission are covered. A structured Governance revision cannot use
+an old unlinked plan to bypass its allowance. Every new approved structured
+revision requires a new notice version, even when notice text is unchanged.
+
+Two fresh browser runs passed **23 tests in 12.7 seconds** and **23 tests in
+12.4 seconds**, with zero retries or skips. They exercise the actual legacy-to-v2
+form transition, selected read-only policy, preservation of historical values,
+limits, repeat/corrected responses, stale selection clearing and exact private
+permission scope. Browser artifacts are `/tmp/twin-browser-linked-green/` and
+`/tmp/twin-browser-linked-green2/`, outside Git. Independent review cleared both
+policy batches and the UI, including the transaction and authorization boundaries.
+
+Phase 5 adds four sequence test methods comprising 16 fixed seed/scenario
+combinations, including both legacy and version 2 capture models. They preserve
+original bytes and deadlines through retry, correction, policy/review changes,
+withdrawal, holds, disposal and multiple restores. Expected state is computed
+independently of the production helpers; failed runs retain seed/action traces.
+The focused suite passed in 0.499 seconds.
+
+Fourteen interruption/I/O tests cover eight synchronized process-kill boundaries
+and six narrow injected filesystem failures. Tests kill only their own child
+process inside Docker, using pipe barriers without fixed sleeps. They verify
+pre-commit rollback, post-commit lost acknowledgment, durable journal restrictions,
+backup manifest recovery, interrupted disposal and sanitized restore publication.
+Independent review reran all 14 successfully in 1.080 seconds. No production
+fault-injection endpoint or real-data operation is involved.
+
+Recovery limits: an interrupted restore can leave a temporary sanitized file
+or a published destination. Inspect and clean only the disposable attempt after
+the process exits; retry restoration to a new destination with authoritative
+journals. Never overwrite the published file or discard restriction journals.
+Process kills and simulated I/O errors do not establish hardware power-loss,
+forensic-erasure or storage-device durability guarantees. Backup automation,
+administrative retirement, multi-user access controls and lifecycle performance
+optimization remain outside this implementation.
+
+The first integrated full run correctly failed three import-grouping checks in
+new interruption tests, while every behavior suite passed. After formatting
+those imports, `sh tests/quality/run.sh --full` completed successfully with fresh
+storage and stable source. Its record is `/tmp/twin-lab-quality.Xew7J7/results.json`:
+
+| Required suite | Passed | Failures / skips |
+| --- | ---: | ---: |
+| Existing and focused Python domain/HTTP tests | 136 | 0 / 0 |
+| Historical compatibility and setup | 9 | 0 / 0 |
+| Seeded sequences (16 scenario combinations) | 4 | 0 / 0 |
+| Process interruption and I/O recovery | 14 | 0 / 0 |
+| Chromium browser workflows | 23 | 0 / 0 |
+
+All six required host stages ran: isolation, exclusions, Python, JavaScript,
+server startup and browser. Lint, format, gradual types, all-source syntax,
+47 exclusion sentinels and deliberate bad-input guards passed. Python checks
+took 11.047 seconds; Chromium took 12.408 seconds with zero retries or flaky
+results. There were no missing suites, expected failures, suppressed failures,
+or source changes during the run. The earlier failed integrated artifact remains
+at `/tmp/twin-lab-quality.ypqvou/` for diagnosis.
+
+Actual tools: Python 3.12.14, SQLite 3.40.1, Ruff 0.16.7, mypy 2.3.1,
+Node v24.20.0, TypeScript 7.0.2 and Playwright 1.63.0. Package locks and
+Dockerfiles record the verified dependencies/image digests; each run records
+resolved image metadata, commands, source hashes, test identities and logs.
+The setup script is separate and explicit; neither gate mode downloads tools.
+
+Independent Phase 5 review also passed four sequence tests in 0.621 seconds and
+14 interruption tests in 1.252 seconds, with no blocking findings. Review checked
+that expected deadlines do not use production calculators and all eight child
+barriers assert post-restart recovery. Earlier review findings about missing gate
+stages, migration locking and scope-reset bypasses are resolved and covered.
+
+SHA-256 checks against the pre-task baseline confirm that the actual SQLite
+database and both lifecycle journals are byte-identical. Container identity,
+start time and restart count also match. No actual governance, response, consent,
+case-review or operating attestation was created by these tests. The application
+has not been restarted; make a controlled backup and perform the documented
+version 4 upgrade before using the new forms on actual storage.
+
+Files changed are grouped for review:
+
+- `tests/quality/` contains the gate, standalone Compose configuration, locked
+  development tools, static configurations and failure-detection checks.
+- `tests/browser/`, `tests/compatibility/`, `tests/sequences/` and
+  `tests/interruptions/` contain new suites; `tests/test_pilot_contracts.py` and
+  `tests/test_linked_plans.py` extend fast contract coverage. Existing top-level
+  tests/helpers were formatted and updated at changed persistence boundaries.
+- `twin_lab/persistence.py` and `twin_lab/migrations.py` are the two new runtime
+  modules. Store/catalog/collection/governance/lifecycle/backup/maintenance and
+  existing schemas use the consolidated helpers and transactional setup.
+  Governance/collection modules also implement the explicit version 2 contracts.
+- Static `capture-mode.js`, `collection.js`, `governance-form.js` and
+  `governance.js` implement refresh and policy workflows. `api.js` and
+  `lifecycle.js` have narrow gradual-type fixes. No clinical fixture changed.
+- `.gitignore`, `tests/check-git-ignore.sh`, `AGENTS.md`, `README.md`, and
+  quality-plan/schema/milestone-3/decisions/backlog/verification documentation
+  describe the quality rules, setup, contracts, actual evidence and limits.
+
+The local source checkpoint is committed; implementation changes remain in the
+working tree on `feat/twin-lab-v0-1`. Nothing was pushed or deployed. The lower
+priority performance measurement and full strict typing remain follow-ups, not
+silently skipped required checks.
+
 ## Approved governance documents, revision 0.2 — September 10, 2026
 
 The user's explicit approval is recorded in both incorporated documents, with

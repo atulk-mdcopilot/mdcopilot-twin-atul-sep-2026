@@ -1,15 +1,37 @@
 """Case-catalog validation and immutable SQLite schema."""
 
-from datetime import date, datetime, timezone
 import re
+from datetime import date, datetime, timezone
 
-from .schemas import (CASE_FLAGS, ValidationError, canonical_json, exact_keys,
-                      read_json, text_field, validate_case, validate_code, validate_id)
+from .schemas import (
+    CASE_FLAGS,
+    ValidationError,
+    canonical_json,
+    exact_keys,
+    read_json,
+    text_field,
+    validate_case,
+    validate_code,
+    validate_id,
+)
 
-REVIEW_FIELDS = {"request_id", "version_id", "reviewer_code", "reviewed_on",
-                 "comments", "disposition", "supersedes_review_id"}
-VERSION_FIELDS = {"request_id", "based_on_version_id", "version", "editor_code",
-                  "change_note", "snapshot"}
+REVIEW_FIELDS = {
+    "request_id",
+    "version_id",
+    "reviewer_code",
+    "reviewed_on",
+    "comments",
+    "disposition",
+    "supersedes_review_id",
+}
+VERSION_FIELDS = {
+    "request_id",
+    "based_on_version_id",
+    "version",
+    "editor_code",
+    "change_note",
+    "snapshot",
+}
 DISPOSITIONS = {"approved", "needs_revision", "rejected"}
 
 
@@ -41,15 +63,32 @@ def version_values(body):
     validate_id(body["based_on_version_id"])
     editor = validate_code(body["editor_code"])
     text_field(body["change_note"], "Change note")
-    if not isinstance(body["version"], str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", body["version"]):
-        raise ValidationError("Version must contain 1–64 letters, digits, dots, underscores or hyphens.")
+    if not isinstance(body["version"], str) or not re.fullmatch(
+        r"[A-Za-z0-9._-]{1,64}", body["version"]
+    ):
+        raise ValidationError(
+            "Version must contain 1–64 letters, digits, dots, underscores or hyphens."
+        )
     return editor
 
 
 def matched_variant(family, base):
-    exact_keys(family, {"family_id", "title", "base_case_id", "base_version",
-                       "variant_case_id", "variant_title", "factor_label", "fact_label",
-                       "base_value", "variant_value", "held_constant"})
+    exact_keys(
+        family,
+        {
+            "family_id",
+            "title",
+            "base_case_id",
+            "base_version",
+            "variant_case_id",
+            "variant_title",
+            "factor_label",
+            "fact_label",
+            "base_value",
+            "variant_value",
+            "held_constant",
+        },
+    )
     for key in set(family) - {"held_constant"}:
         text_field(family[key], key, limit=2000)
     if not isinstance(family["held_constant"], list) or not family["held_constant"]:
@@ -59,41 +98,20 @@ def matched_variant(family, base):
     if family["family_id"] != base["family_id"] or family["variant_case_id"] == base["case_id"]:
         raise ValidationError("Matched variants must share a family and have a new case identity.")
     variant = read_json(canonical_json(base))
-    matches = [fact for fact in variant["decision_time_facts"]
-               if fact["label"] == family["fact_label"]]
+    matches = [
+        fact for fact in variant["decision_time_facts"] if fact["label"] == family["fact_label"]
+    ]
     if len(matches) != 1 or matches[0]["value"] != family["base_value"]:
         raise ValidationError("Matched-family declaration does not match its base fact.")
     if family["variant_value"] == family["base_value"]:
         raise ValidationError("A matched variant must change its declared fact.")
     matches[0]["value"] = family["variant_value"]
     variant.update(CASE_FLAGS)
-    variant.update(case_id=family["variant_case_id"], title=family["variant_title"],
-                   provenance="Newly authored synthetic UI/demo placeholder for Twin Lab v0.2; "
-                   "not from patient records or an original case workbook. "
-                   "Unreviewed; not eligible for study.")
-    return validate_case(variant)
-
-
-def create_tables(db):
-    # Individual statements keep DDL and fixture imports in the caller's transaction.
-    statements = (
-        """CREATE TABLE IF NOT EXISTS case_versions (
-            id TEXT PRIMARY KEY, case_id TEXT NOT NULL, version_label TEXT NOT NULL,
-            based_on_id TEXT UNIQUE REFERENCES case_versions(id),
-            request_id TEXT UNIQUE, request_body TEXT, payload TEXT NOT NULL,
-            UNIQUE(case_id, version_label))""",
-        """CREATE TABLE IF NOT EXISTS case_reviews (
-            id TEXT PRIMARY KEY, version_id TEXT NOT NULL REFERENCES case_versions(id),
-            supersedes_id TEXT UNIQUE REFERENCES case_reviews(id),
-            request_id TEXT NOT NULL UNIQUE, request_body TEXT NOT NULL, payload TEXT NOT NULL)""",
-        """CREATE TABLE IF NOT EXISTS case_families (
-            id TEXT PRIMARY KEY, payload TEXT NOT NULL)""",
-        "CREATE INDEX IF NOT EXISTS case_reviews_version ON case_reviews(version_id)",
+    variant.update(
+        case_id=family["variant_case_id"],
+        title=family["variant_title"],
+        provenance="Newly authored synthetic UI/demo placeholder for Twin Lab v0.2; "
+        "not from patient records or an original case workbook. "
+        "Unreviewed; not eligible for study.",
     )
-    for statement in statements:
-        db.execute(statement)
-    for table in ("case_versions", "case_reviews", "case_families"):
-        for operation in ("UPDATE", "DELETE"):
-            db.execute(f"""CREATE TRIGGER IF NOT EXISTS {table}_no_{operation}
-                BEFORE {operation} ON {table} BEGIN
-                SELECT RAISE(ABORT, 'Append-only records'); END""")
+    return validate_case(variant)
